@@ -10,7 +10,7 @@ namespace MessageAppBackend.DbModels
         public User? Sender { get; set; }
         
         public Guid ChatId { get; set; }
-        public Chat? Conversation { get; set; }
+        public Chat? Chat { get; set; }
         
         public string Content { get; set; } = string.Empty;
         public DateTime SentAt { get; set; }
