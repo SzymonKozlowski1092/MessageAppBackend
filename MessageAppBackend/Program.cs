@@ -1,5 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using MessageAppBackend.Database;
+using MessageAppBackend.DbModels;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Cors.Infrastructure;
+using MessageAppBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +16,10 @@ builder.Services.AddDbContext<MessageAppDbContext>((opt) =>
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     opt.UseSqlServer(connectionString);
 });
+
+builder.Services.AddScoped<MessageAppDbContext>();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<IAccountService, AccountService>();
 
 var app = builder.Build();
 
