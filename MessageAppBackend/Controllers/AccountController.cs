@@ -16,14 +16,26 @@ namespace MessageAppBackend.Controllers
         }
 
         [HttpPost("Register")]
-        public ActionResult RegisterUser([FromBody] RegisterUserDto registerUserDto)
+        public async Task<IActionResult> RegisterUser([FromBody] RegisterUserDto registerUserDto)
         {
             if(!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
             
-            _accountService.RegisterUser(registerUserDto);
+            await _accountService.Register(registerUserDto);
+            return Ok();
+        }
+
+        [HttpPost("Login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequestDto)
+        {
+            var result = await _accountService.Login(loginRequestDto);
+            if(result == false)
+            {
+                return Unauthorized();
+            }
+
             return Ok();
         }
     }
