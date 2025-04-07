@@ -24,5 +24,20 @@ namespace MessageAppBackend.Services
 
             return chats!;
         }
+
+        public async Task<bool> LeaveChat(Guid userId, Guid chatId)
+        {
+            var userChat = await _dbContext.UserChats
+                .FirstOrDefaultAsync(uc => uc.UserId == userId && uc.ChatId == chatId);
+
+            if (userChat != null)
+            {
+                return false;
+            }
+
+            _dbContext.UserChats.Remove(userChat!);
+            await _dbContext.SaveChangesAsync();
+            return true;
+        }
     }
 }
