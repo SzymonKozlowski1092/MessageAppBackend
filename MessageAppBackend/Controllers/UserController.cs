@@ -1,5 +1,4 @@
 ﻿using MessageAppBackend.Services.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MessageAppBackend.Controllers
@@ -23,6 +22,18 @@ namespace MessageAppBackend.Controllers
                 return NotFound($"No chats found for user with id: {userId}.");
             }
             return Ok(chats);
+        }
+
+        [HttpDelete("{userId}/leave/{chatId}")]
+        public async Task<IActionResult> LeaveChat(Guid userId, Guid chatId)
+        {
+            var result = await _userService.LeaveChat(userId, chatId);
+            if (result == false)
+            {
+                return NotFound($"User with id: {userId} is not a member of chat with id: {chatId}.");
+            }
+            
+            return NoContent();
         }
     }
 }
