@@ -11,7 +11,7 @@ namespace MessageAppBackend.Services
     public interface IAccountService
     {
         public Task<bool> Register(RegisterUserDto registerUserDto);
-        public Task<bool> Login(LoginRequestDto loginUserDto);
+        public Task<User>? Login(LoginRequestDto loginUserDto);
     }
     public class AccountService : IAccountService
     {
@@ -24,7 +24,7 @@ namespace MessageAppBackend.Services
             _passwordHasher = passwordHasher;
         }
 
-        public async Task<bool> Login(LoginRequestDto loginRequestDto)
+        public async Task<User>? Login(LoginRequestDto loginRequestDto)
         {
             if (loginRequestDto is null)
                 throw new ArgumentNullException(nameof(loginRequestDto));
@@ -32,16 +32,16 @@ namespace MessageAppBackend.Services
             var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == loginRequestDto.Username);
             if(user is null)
             {
-                return false;
+                return null!;
             }
 
             var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, loginRequestDto.Password);
             if(result == PasswordVerificationResult.Failed)
             {
-                return false;
+                return null!;
             }
 
-            return true;
+            return user;
         }
 
         public async Task<bool> Register(RegisterUserDto registerUserDto)

@@ -10,9 +10,11 @@ namespace MessageAppBackend.Controllers
     public class AccountController : ControllerBase
     {
         IAccountService _accountService;
-        public AccountController(IAccountService accontService)
+        ITokenService _tokenService;
+        public AccountController(IAccountService accontService, ITokenService tokenService)
         {
             _accountService = accontService;
+            _tokenService = tokenService;
         }
 
         [HttpPost("Register")]
@@ -30,13 +32,14 @@ namespace MessageAppBackend.Controllers
         [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequestDto)
         {
-            var result = await _accountService.Login(loginRequestDto);
-            if(result == false)
+            var loggedUser = await _accountService.Login(loginRequestDto)!;
+            if(loggedUser is null)
             {
-                return Unauthorized();
+                return Unauthorized("Nieprawidłowa nazwa użytkownika lub hasło.");
             }
 
-            return Ok();
+            var token = _tokenService.GenerateJwtToken(loggedUser);
+            return Ok(new {Token = token});
         }
     }
 }
