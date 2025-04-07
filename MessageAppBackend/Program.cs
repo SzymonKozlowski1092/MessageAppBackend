@@ -2,11 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using MessageAppBackend.Database;
 using MessageAppBackend.DbModels;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using MessageAppBackend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using MessageAppBackend.Services.Interfaces;
+using MessageAppBackend;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +24,9 @@ builder.Services.AddDbContext<MessageAppDbContext>((opt) =>
 builder.Services.AddScoped<MessageAppDbContext>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 builder.Services.AddAuthentication(options =>
 {
@@ -36,7 +39,7 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
 
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"])),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"]!)),
 
         ValidateIssuer = true,
         ValidIssuer = builder.Configuration["JwtSettings:Issuer"],

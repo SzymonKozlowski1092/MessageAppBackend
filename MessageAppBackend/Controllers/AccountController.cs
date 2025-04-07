@@ -1,5 +1,6 @@
 ﻿using MessageAppBackend.DTO;
 using MessageAppBackend.Services;
+using MessageAppBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 

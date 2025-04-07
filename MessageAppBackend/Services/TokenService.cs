@@ -1,4 +1,5 @@
 ﻿using MessageAppBackend.DbModels;
+using MessageAppBackend.Services.Interfaces;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -6,10 +7,6 @@ using System.Text;
 
 namespace MessageAppBackend.Services
 {
-    public interface ITokenService
-    {
-        string GenerateJwtToken(User user);
-    }
     public class TokenService : ITokenService
     {
         private readonly IConfiguration _configuration;

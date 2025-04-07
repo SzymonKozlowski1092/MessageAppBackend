@@ -3,16 +3,10 @@ using MessageAppBackend.DbModels;
 using MessageAppBackend.DTO;
 using Microsoft.EntityFrameworkCore;
 using MessageAppBackend.Database;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.AspNetCore.Mvc;
+using MessageAppBackend.Services.Interfaces;
 
 namespace MessageAppBackend.Services
 {
-    public interface IAccountService
-    {
-        public Task<bool> Register(RegisterUserDto registerUserDto);
-        public Task<User>? Login(LoginRequestDto loginUserDto);
-    }
     public class AccountService : IAccountService
     {
         private readonly MessageAppDbContext _dbContext;
