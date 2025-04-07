@@ -5,7 +5,7 @@ namespace MessageAppBackend.DTO
     public class UpdateMessageDto
     {
         [Required(ErrorMessage = "Treść wiadomości nie może być pusta.")]
-        public string Content = string.Empty;
+        public string Content { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Identyfikator wiadomości jest wymagany.")]
         public Guid Id { get; set; }
