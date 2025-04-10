@@ -1,15 +1,14 @@
 ﻿using MessageAppBackend.DbModels;
 using MessageAppBackend.DTO;
 using MessageAppBackend.Services.Interfaces;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
-using System.Diagnostics.Contracts;
 
 namespace MessageAppBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class MessageController : ControllerBase
     {
         private readonly IMessageService _messageService;

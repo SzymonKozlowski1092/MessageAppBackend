@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using MessageAppBackend.Services.Interfaces;
 using MessageAppBackend;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +56,39 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Autoryzacja JWT wykorzystuj¹ca schemat Bearer. WprowadŸ 'Bearer' [spacja] a nastêpnie swój token w polu poni¿ej.\n\n Przyk³ad: 'Bearer 12345abcdef'",
+        Name = "Authorization",
+        In = ParameterLocation.Header, 
+        Type = SecuritySchemeType.Http, 
+        Scheme = "Bearer", 
+        BearerFormat = "JWT" 
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
+            },
+            new List<string>()
+        }
+    });
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "MessageApp API", Version = "v1" });
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -65,6 +99,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
