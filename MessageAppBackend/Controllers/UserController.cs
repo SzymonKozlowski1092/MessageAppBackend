@@ -1,8 +1,5 @@
 ﻿using MessageAppBackend.Services.Interfaces;
-<<<<<<< HEAD
 using Microsoft.AspNetCore.Authorization;
-=======
->>>>>>> d6c7e0a540e547772c0621812c0d9b29849256e9
 using Microsoft.AspNetCore.Mvc;
 
 namespace MessageAppBackend.Controllers
