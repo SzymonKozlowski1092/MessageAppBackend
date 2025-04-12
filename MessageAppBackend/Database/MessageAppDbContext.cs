@@ -9,6 +9,7 @@ namespace MessageAppBackend.Database
         public DbSet<Chat> Chats { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<UserChat> UserChats { get; set; }
+        public DbSet<ChatInvitation> ChatInvitations { get; set; }
 
         public MessageAppDbContext(DbContextOptions<MessageAppDbContext> options) : base(options)
         {
@@ -19,7 +20,7 @@ namespace MessageAppBackend.Database
             base.OnModelCreating(modelBuilder);
 
             #region KONFIGURACJA ENCJI
-            
+
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasIndex(u => u.Username).IsUnique();
@@ -45,10 +46,15 @@ namespace MessageAppBackend.Database
             {
                 entity.Property(u => u.Id).ValueGeneratedOnAdd();
             });
+            modelBuilder.Entity<ChatInvitation>(entity =>
+            {
+                entity.Property(u => u.Id).ValueGeneratedOnAdd();
+                entity.Property(u => u.InvitedByUserId).IsRequired();
+            });
             #endregion
 
             #region KONFIGURACJA RELACJI
-            
+
             modelBuilder.Entity<UserChat>()
                 .HasKey(uc => new { uc.UserId, uc.ChatId });
 
@@ -71,6 +77,26 @@ namespace MessageAppBackend.Database
                 .HasOne(m => m.Chat)
                 .WithMany(c => c.Messages)
                 .HasForeignKey(m => m.ChatId);
+
+            modelBuilder.Entity<ChatInvitation>()
+                .HasKey(ci => ci.Id);
+
+            modelBuilder.Entity<ChatInvitation>()
+                .HasOne(ci => ci.Chat)
+                .WithMany(c => c.Invitations)
+                .HasForeignKey(ci => ci.ChatId);
+
+            modelBuilder.Entity<ChatInvitation>()
+                .HasOne(ci => ci.InvitedUser)
+                .WithMany(u => u.ReceivedChatInvitations)
+                .HasForeignKey(ci => ci.InvitedUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ChatInvitation>()
+                .HasOne(ci => ci.InvitedByUser)
+                .WithMany(u => u.SentChatInvitations)
+                .HasForeignKey(ci => ci.InvitedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
             #endregion
         }
     }
