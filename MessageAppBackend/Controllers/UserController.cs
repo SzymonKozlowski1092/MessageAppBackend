@@ -15,9 +15,9 @@ namespace MessageAppBackend.Controllers
             _userService = userService;
         }
 
-        [HttpGet("chats/{userId}")]
-        public async Task<IActionResult> GetChats(Guid userId)
-        {
+        [HttpGet("/{userId}/chats")]
+        public async Task<IActionResult> GetChats(Guid userId) 
+        { 
             var chats = await _userService.GetChats(userId);
             if (chats == null || !chats.Any())
             {
