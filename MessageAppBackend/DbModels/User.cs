@@ -17,7 +17,10 @@ namespace MessageAppBackend.DbModels
         [EmailAddress]
         [Required]
         public string Email { get; set; } = string.Empty;
-        [Required]
+
         public ICollection<UserChat>? Chats { get; set; }
+
+        public ICollection<ChatInvitation>? ReceivedChatInvitations { get; set; }
+        public ICollection<ChatInvitation>? SentChatInvitations { get; set; }
     }
 }

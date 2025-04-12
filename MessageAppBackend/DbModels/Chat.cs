@@ -11,5 +11,6 @@ namespace MessageAppBackend.DbModels
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public ICollection<UserChat>? Users { get; set; }
         public ICollection<Message>? Messages { get; set; }
+        public ICollection<ChatInvitation>? Invitations { get; set; }
     }
 }
