@@ -5,13 +5,13 @@ namespace MessageAppBackend.DTO
 {
     public class NewMessageDto
     {
-        [Required(ErrorMessage = "Treść wiadomości nie może być pusta.")]
+        [Required(ErrorMessage = "Message content cannot be empty.")]
         public string Content { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Identyfikator nadawcy jest wymagany.")]
+        [Required(ErrorMessage = "Sender id is required")]
         public Guid SenderId { get; set; }
 
-        [Required(ErrorMessage = "Identyfikator czatu jest wymagany.")]
+        [Required(ErrorMessage = "Chat id is required.")]
         public Guid ChatId { get; set; }
     }
 }

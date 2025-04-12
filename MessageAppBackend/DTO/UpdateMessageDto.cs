@@ -4,10 +4,10 @@ namespace MessageAppBackend.DTO
 {
     public class UpdateMessageDto
     {
-        [Required(ErrorMessage = "Treść wiadomości nie może być pusta.")]
+        [Required(ErrorMessage = "Message content cannot be empty")]
         public string Content { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Identyfikator wiadomości jest wymagany.")]
+        [Required(ErrorMessage = "Id is required")]
         public Guid Id { get; set; }
 
     }
