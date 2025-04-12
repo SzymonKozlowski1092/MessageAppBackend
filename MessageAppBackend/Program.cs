@@ -9,8 +9,12 @@ using System.Text;
 using MessageAppBackend.Services.Interfaces;
 using MessageAppBackend;
 using Microsoft.OpenApi.Models;
+using NLog.Web;
+using MessageAppBackend.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseNLog();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -22,6 +26,7 @@ builder.Services.AddDbContext<MessageAppDbContext>((opt) =>
     opt.UseSqlServer(connectionString);
 });
 
+builder.Services.AddScoped<ErrorHandlingMiddleware>();
 builder.Services.AddScoped<MessageAppDbContext>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IAccountService, AccountService>();
@@ -97,6 +102,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
