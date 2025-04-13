@@ -36,7 +36,7 @@ namespace MessageAppBackend.Services
                 .Where(ci => ci.InvitedUserId == userId && ci.Status == InvitationStatus.Pending)
                 .ToListAsync();
 
-            if (invitations.IsNullOrEmpty())
+            if (invitations is null || !invitations.Any())
             {
                 return Result.Fail($"No invitations found for user with id: {userId}");
             }
