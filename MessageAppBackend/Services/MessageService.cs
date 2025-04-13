@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using FluentResults;
 using MessageAppBackend.Database;
 using MessageAppBackend.DbModels;
 using MessageAppBackend.DTO;
 using MessageAppBackend.Services.Interfaces;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace MessageAppBackend.Services
@@ -16,60 +18,57 @@ namespace MessageAppBackend.Services
             _dbContext = dbContext;
             _mapper = mapper;
         }
+    
+        public async Task<Result<Message>> GetMessage(Guid id)
+        {
+            var messageResult = await _dbContext.Messages
+                .Include(m => m.Sender)
+                .FirstOrDefaultAsync(m => m.Id == id);
 
-        public async Task<Message> AddMessage(NewMessageDto newMessageDto)
+            return messageResult is null
+                ? Result.Fail($"Message with id: {id} not found")
+                : Result.Ok(messageResult);
+        }
+        public async Task<Result<Message>> AddMessage(NewMessageDto newMessageDto)
         {
             var newMessage = _mapper.Map<Message>(newMessageDto);
             if(newMessage is null)
             {
-                return null!;
+                return Result.Fail("Error with creating new message");
             }
 
             await _dbContext.AddAsync(newMessage);
             await _dbContext.SaveChangesAsync();
             
-            return newMessage;
+            return Result.Ok(newMessage);
         }
-
-        public async Task<bool> DeleteMessage(Guid id)
+        public async Task<Result> DeleteMessage(Guid id)
         {
-            var message = await _dbContext.Messages.FirstOrDefaultAsync(m => m.Id == id);
-            if(message is null)
+            var messageResult = await GetMessage(id);
+            if(messageResult.IsFailed)
             {
-                return false;
+                return messageResult.ToResult();
             }
+            var message = messageResult.Value;
 
             _dbContext.Messages.Remove(message);
             _dbContext.SaveChanges();
-            return true;
+            return Result.Ok();
         }
 
-        public async Task<Message> GetMessage(Guid id)
+        public async Task<Result> UpdateMessage(Guid id, UpdateMessageDto updateMessageDto)
         {
-            var message = await _dbContext.Messages.
-                Include(m => m.Sender).
-                FirstOrDefaultAsync(m => m.Id == id);
-            
-            if (message is null)
+            var messageResult = await GetMessage(id);
+            if (messageResult.IsFailed)
             {
-                return null!;
+                return messageResult.ToResult();
             }
-
-            return message;
-        }
-
-        public async Task<bool> UpdateMessage(Guid id, UpdateMessageDto updateMessageDto)
-        {
-            var message = await _dbContext.Messages.FirstOrDefaultAsync(m => m.Id == id);
-            if (message is null)
-            {
-                return false;
-            }
+            var message = messageResult.Value;
 
             message.Content = updateMessageDto.Content;
             _dbContext.SaveChanges();
 
-            return true;
+            return Result.Ok();
         }
     }
 }

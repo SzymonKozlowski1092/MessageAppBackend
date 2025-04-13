@@ -52,7 +52,7 @@ namespace MessageAppBackend.Services
                 .Where(ci => ci.InvitedUserId == userId && ci.Status == InvitationStatus.Pending)
                 .ToListAsync();
 
-            if (invitations is null || invitations.IsNullOrEmpty())
+            if (invitations is null || !invitations.Any())
             {
                 return Result.Fail("No invitations found");
             }
