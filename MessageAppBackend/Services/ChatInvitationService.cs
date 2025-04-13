@@ -16,32 +16,16 @@ namespace MessageAppBackend.Services
         {
             _dbContext = dbContext;
         }
-        public async Task<Result> AcceptChatInvitation(Guid chatId, Guid invitedUserId)
+        public async Task<Result> UpdateInvitationStatus(Guid chatId, Guid invitedUserId, InvitationStatus newStatus)
         {
             var invitationResult = await GetInvitation(chatId, invitedUserId);
             if (invitationResult.IsFailed)
             {
                 return invitationResult.ToResult();
             }
-            var invitation = invitationResult.Value;
+            invitationResult.Value.Status = newStatus;
 
-            invitation.Status = InvitationStatus.Accepted;
             await _dbContext.SaveChangesAsync();
-
-            return Result.Ok();
-        }
-        public async Task<Result> DeclineChatInvitation(Guid chatId, Guid invitedUserId)
-        {
-            var invitationResult = await GetInvitation(chatId, invitedUserId);
-            if (invitationResult.IsFailed)
-            {
-                return invitationResult.ToResult();
-            }
-            var invitation = invitationResult.Value;
-
-            invitation.Status = InvitationStatus.Declined;
-            await _dbContext.SaveChangesAsync();
-
             return Result.Ok();
         }
         public async Task<Result<List<ChatInvitation>>> GetUserActiveInvitations(Guid userId)
@@ -52,9 +36,9 @@ namespace MessageAppBackend.Services
                 .Where(ci => ci.InvitedUserId == userId && ci.Status == InvitationStatus.Pending)
                 .ToListAsync();
 
-            if (invitations is null || invitations.IsNullOrEmpty())
+            if (invitations.IsNullOrEmpty())
             {
-                return Result.Fail("No invitations found");
+                return Result.Fail($"No invitations found for user with id: {userId}");
             }
 
             return Result.Ok(invitations);
@@ -66,10 +50,10 @@ namespace MessageAppBackend.Services
                 .FirstOrDefaultAsync(c => c.Id == sendInvitationDto.ChatId);
             if (chat is null)
             {
-                return Result.Fail("Chat not found");
+                return Result.Fail($"Chat with id: {sendInvitationDto.ChatId} not found");
             }
 
-            var invitedUserResult = await GetUser(sendInvitationDto.InvitedUserId, "Invited user not found");
+            var invitedUserResult = await GetUser(sendInvitationDto.InvitedUserId, $"Invited user with id {sendInvitationDto.InvitedUserId} not found");
             if (invitedUserResult.IsFailed)
             {
                 return invitedUserResult.ToResult();
@@ -78,10 +62,10 @@ namespace MessageAppBackend.Services
 
             if (chat.Users!.Any(u => u.UserId == sendInvitationDto.InvitedUserId))
             {
-                return Result.Fail("User is already in this chat");
+                return Result.Fail($"User with id: {sendInvitationDto.InvitedUserId} already exists in chat with id {sendInvitationDto.ChatId}");
             }
 
-            var invitedByUserResult = await GetUser(sendInvitationDto.InvitedByUserId, "Invitation sender not found");
+            var invitedByUserResult = await GetUser(sendInvitationDto.InvitedByUserId, $"Invitation sender with id: {sendInvitationDto.InvitedByUserId} not found");
             if (invitedByUserResult.IsFailed)
             {
                 return invitedByUserResult.ToResult();
@@ -94,7 +78,7 @@ namespace MessageAppBackend.Services
                 ci.InvitedByUserId == sendInvitationDto.InvitedByUserId &&
                 ci.Status == InvitationStatus.Pending))
             {
-                return Result.Fail("Invitation already sent");
+                return Result.Fail("This invitation already exists");
             }
 
             var chatInvitation = new ChatInvitation
@@ -127,7 +111,9 @@ namespace MessageAppBackend.Services
                 ci.InvitedUserId == invitedUserId
                 && ci.Status == InvitationStatus.Pending);
 
-            return invitation is null ? Result.Fail("Invitation not exists") : Result.Ok(invitation);
+            return invitation is null ? 
+                Result.Fail($"Invitation does not exist for chat with id: {chatId} and user with id: {invitedUserId}") : 
+                Result.Ok(invitation);
         }
     }
 }
