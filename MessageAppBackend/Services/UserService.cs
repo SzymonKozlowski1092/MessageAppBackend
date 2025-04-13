@@ -1,7 +1,9 @@
-﻿using MessageAppBackend.Database;
+﻿using FluentResults;
+using MessageAppBackend.Database;
 using MessageAppBackend.DbModels;
 using MessageAppBackend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace MessageAppBackend.Services
 {
@@ -13,7 +15,7 @@ namespace MessageAppBackend.Services
             _dbContext = dbContext;
         }
 
-        public async Task<List<Chat>> GetChats(Guid userId)
+        public async Task<Result<List<Chat>>> GetChats(Guid userId)
         {
             var chats = await _dbContext.Chats
                 .Where(c => c.Users!
@@ -22,22 +24,27 @@ namespace MessageAppBackend.Services
                 .Include(c => c.Users)
                 .ToListAsync();
 
-            return chats!;
+            if (chats.IsNullOrEmpty())
+            {
+                return Result.Fail($"No chats found for user with id: {userId}.");
+            }
+
+            return Result.Ok(chats);
         }
 
-        public async Task<bool> LeaveChat(Guid userId, Guid chatId)
+        public async Task<Result> LeaveChat(Guid userId, Guid chatId)
         {
             var userChat = await _dbContext.UserChats
                 .FirstOrDefaultAsync(uc => uc.UserId == userId && uc.ChatId == chatId);
 
-            if (userChat != null)
+            if (userChat is null)
             {
-                return false;
+                return Result.Fail($"No chat found with id: {chatId}, for user with id: {userId}");
             }
 
             _dbContext.UserChats.Remove(userChat!);
             await _dbContext.SaveChangesAsync();
-            return true;
+            return Result.Ok();
         }
     }
 }
