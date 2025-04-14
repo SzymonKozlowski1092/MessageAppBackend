@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using MessageAppBackend.DbModels;
-using MessageAppBackend.DTO;
 using Microsoft.EntityFrameworkCore;
 using MessageAppBackend.Database;
 using MessageAppBackend.Services.Interfaces;
 using FluentResults;
 using MessageAppBackend.Common.Enums;
+using MessageAppBackend.DTO.AccountDTOs;
 
 namespace MessageAppBackend.Services
 {

@@ -3,9 +3,8 @@ using FluentResults;
 using MessageAppBackend.Common.Enums;
 using MessageAppBackend.Database;
 using MessageAppBackend.DbModels;
-using MessageAppBackend.DTO;
+using MessageAppBackend.DTO.MessageDTOs;
 using MessageAppBackend.Services.Interfaces;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace MessageAppBackend.Services
@@ -20,7 +19,7 @@ namespace MessageAppBackend.Services
             _mapper = mapper;
         }
     
-        public async Task<Result<Message>> GetMessage(Guid id)
+        public async Task<Result<MessageDto>> GetMessage(Guid id)
         {
             var messageResult = await _dbContext.Messages
                 .Include(m => m.Sender)
@@ -29,9 +28,9 @@ namespace MessageAppBackend.Services
             return messageResult is null
                 ? Result.Fail(new Error($"Message with id: {id} not found")
                     .WithMetadata("Code", ErrorCode.NotFound))
-                : Result.Ok(messageResult);
+                : Result.Ok(_mapper.Map<MessageDto>(messageResult));
         }
-        public async Task<Result<Message>> AddMessage(NewMessageDto newMessageDto)
+        public async Task<Result> AddMessage(NewMessageDto newMessageDto)
         {
             var newMessage = _mapper.Map<Message>(newMessageDto);
             if(newMessage is null)
@@ -43,29 +42,30 @@ namespace MessageAppBackend.Services
             await _dbContext.AddAsync(newMessage);
             await _dbContext.SaveChangesAsync();
             
-            return Result.Ok(newMessage);
+            return Result.Ok();
         }
         public async Task<Result> DeleteMessage(Guid id)
         {
-            var messageResult = await GetMessage(id);
-            if(messageResult.IsFailed)
+            var message = await _dbContext.Messages.FirstOrDefaultAsync(m => m.Id == id)!;
+            if(message is null)
             {
-                return messageResult.ToResult();
+                return Result.Fail(new Error("Message to delete not found")
+                    .WithMetadata("Code", ErrorCode.NotFound));
             }
-            var message = messageResult.Value;
 
             _dbContext.Messages.Remove(message);
+            
             await _dbContext.SaveChangesAsync();
             return Result.Ok();
         }
-        public async Task<Result> UpdateMessage(Guid id, UpdateMessageDto updateMessageDto)
+        public async Task<Result> UpdateMessage(UpdateMessageDto updateMessageDto)
         {
-            var messageResult = await GetMessage(id);
-            if (messageResult.IsFailed)
+            var message = await _dbContext.Messages.FirstOrDefaultAsync(m => m.Id == updateMessageDto.Id)!;
+            if (message is null)
             {
-                return messageResult.ToResult();
+                return Result.Fail(new Error("Message to update not found")
+                    .WithMetadata("Code", ErrorCode.NotFound));
             }
-            var message = messageResult.Value;
 
             message.Content = updateMessageDto.Content;
             await _dbContext.SaveChangesAsync();

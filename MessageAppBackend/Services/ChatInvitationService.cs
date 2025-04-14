@@ -1,8 +1,9 @@
-﻿using FluentResults;
+﻿using AutoMapper;
+using FluentResults;
 using MessageAppBackend.Common.Enums;
 using MessageAppBackend.Database;
 using MessageAppBackend.DbModels;
-using MessageAppBackend.DTO;
+using MessageAppBackend.DTO.ChatInvitationDTOs;
 using MessageAppBackend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,24 +11,26 @@ namespace MessageAppBackend.Services
 {
     public class ChatInvitationService : IChatInvitationService
     {
+        private readonly IMapper _mapper;
         private readonly MessageAppDbContext _dbContext;
-        public ChatInvitationService(MessageAppDbContext dbContext)
+        public ChatInvitationService(MessageAppDbContext dbContext, IMapper mapper)
         {
             _dbContext = dbContext;
+            _mapper = mapper;
         }
-        public async Task<Result> UpdateInvitationStatus(Guid chatId, Guid invitedUserId, InvitationStatus newStatus)
+        public async Task<Result> UpdateInvitationStatus(UpdateInvitationStatusDto updateInvitationStatusDto)
         {
-            var invitationResult = await GetInvitation(chatId, invitedUserId);
+            var invitationResult = await GetInvitation(updateInvitationStatusDto.ChatId, updateInvitationStatusDto.InvitedUserId);
             if (invitationResult.IsFailed)
             {
                 return invitationResult.ToResult();
             }
-            invitationResult.Value.Status = newStatus;
+            invitationResult.Value.Status = updateInvitationStatusDto.NewStatus;
 
             await _dbContext.SaveChangesAsync();
             return Result.Ok();
         }
-        public async Task<Result<List<ChatInvitation>>> GetUserActiveInvitations(Guid userId)
+        public async Task<Result<List<ChatInvitationDto>>> GetUserActiveInvitations(Guid userId)
         {
             var invitations = await _dbContext.ChatInvitations
                 .Include(ci => ci.Chat)
@@ -41,7 +44,8 @@ namespace MessageAppBackend.Services
                     .WithMetadata("Code", ErrorCode.NotFound));
             }
 
-            return Result.Ok(invitations);
+            var invitationsDto = _mapper.Map<List<ChatInvitationDto>>(invitations);
+            return Result.Ok(invitationsDto);
         }
         public async Task<Result> SendChatInvitation(SendInvitationDto sendInvitationDto)
         {

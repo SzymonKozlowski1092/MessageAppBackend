@@ -1,7 +1,7 @@
 ﻿using Azure.Messaging;
 using System.ComponentModel.DataAnnotations;
 
-namespace MessageAppBackend.DTO
+namespace MessageAppBackend.DTO.AccountDTOs
 {
     public class RegisterUserDto
     {

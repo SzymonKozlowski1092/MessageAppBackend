@@ -1,6 +1,6 @@
 ﻿using MessageAppBackend.Common.Helpers;
 using MessageAppBackend.DbModels;
-using MessageAppBackend.DTO;
+using MessageAppBackend.DTO.MessageDTOs;
 using MessageAppBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +20,7 @@ namespace MessageAppBackend.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Message>> GetMessage([FromRoute] Guid id) 
+        public async Task<ActionResult<MessageDto>> GetMessage([FromRoute] Guid id) 
         {
             var result = await _messageService.GetMessage(id);
             if(result.IsFailed)
@@ -57,18 +57,18 @@ namespace MessageAppBackend.Controllers
                 return ErrorMapper.MapErrorToResponse(result.Errors.First());
             }
 
-            return CreatedAtAction(nameof(GetMessage), new { id = result.Value.Id }, result.Value);
+            return Created();
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateMessage([FromRoute]Guid id, [FromBody]UpdateMessageDto updateMessageDto)
+        public async Task<IActionResult> UpdateMessage(UpdateMessageDto updateMessageDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
             
-            var result = await _messageService.UpdateMessage(id, updateMessageDto);
+            var result = await _messageService.UpdateMessage(updateMessageDto);
             if(result.IsFailed)
             {
                 return ErrorMapper.MapErrorToResponse(result.Errors.First());

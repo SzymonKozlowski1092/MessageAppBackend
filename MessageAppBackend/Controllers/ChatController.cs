@@ -1,5 +1,6 @@
 ﻿using MessageAppBackend.Common.Helpers;
 using MessageAppBackend.DbModels;
+using MessageAppBackend.DTO.ChatDTOs;
 using MessageAppBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -39,10 +40,10 @@ namespace MessageAppBackend.Controllers
             return Ok(result.Value);
         }
 
-        [HttpPost("create/user/{userId}")]
-        public async Task<ActionResult<Chat>> CreateNewChat(Guid userId, string chatName)
+        [HttpPost("create/user/{UserId}")]
+        public async Task<ActionResult<Chat>> CreateNewChat(CreateChatDto createChatDto)
         {
-            var result = await _chatService.CreateNewChat(userId, chatName);
+            var result = await _chatService.CreateNewChat(createChatDto);
             if (result.IsFailed)
             {
                 return ErrorMapper.MapErrorToResponse(result.Errors.First());

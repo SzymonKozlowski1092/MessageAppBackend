@@ -1,7 +1,9 @@
-﻿using FluentResults;
+﻿using AutoMapper;
+using FluentResults;
 using MessageAppBackend.Common.Enums;
 using MessageAppBackend.Database;
 using MessageAppBackend.DbModels;
+using MessageAppBackend.DTO.ChatDTOs;
 using MessageAppBackend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -11,12 +13,14 @@ namespace MessageAppBackend.Services
     public class UserService : IUserService
     {
         private readonly MessageAppDbContext _dbContext;
-        public UserService(MessageAppDbContext dbContext)
+        private readonly IMapper _mapper;
+        public UserService(MessageAppDbContext dbContext, IMapper mapper)
         {
             _dbContext = dbContext;
+            _mapper = mapper;
         }
 
-        public async Task<Result<List<Chat>>> GetChats(Guid userId)
+        public async Task<Result<List<ChatDto>>> GetChats(Guid userId)
         {
             var chats = await _dbContext.Chats
                 .Where(c => c.Users!
@@ -31,17 +35,19 @@ namespace MessageAppBackend.Services
                     .WithMetadata("Code", ErrorCode.NotFound));
             }
 
-            return Result.Ok(chats);
+            var chatsDto = _mapper.Map<List<ChatDto>>(chats);
+
+            return Result.Ok(chatsDto);
         }
 
-        public async Task<Result> LeaveChat(Guid userId, Guid chatId)
+        public async Task<Result> LeaveChat(LeaveChatDto leaveChatDto)
         {
             var userChat = await _dbContext.UserChats
-                .FirstOrDefaultAsync(uc => uc.UserId == userId && uc.ChatId == chatId);
+                .FirstOrDefaultAsync(uc => uc.UserId == leaveChatDto.UserId && uc.ChatId == leaveChatDto.ChatId);
 
             if (userChat is null)
             {
-                return Result.Fail(new Error($"No chat found with id: {chatId}, for user with id: {userId}")
+                return Result.Fail(new Error($"No chat found with id: {leaveChatDto.ChatId}, for user with id: {leaveChatDto.UserId}")
                     .WithMetadata("Code", ErrorCode.NotFound));
             }
 

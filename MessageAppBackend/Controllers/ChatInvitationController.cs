@@ -1,6 +1,6 @@
 ﻿using MessageAppBackend.Common.Enums;
 using MessageAppBackend.Common.Helpers;
-using MessageAppBackend.DTO;
+using MessageAppBackend.DTO.ChatInvitationDTOs;
 using MessageAppBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,7 +16,7 @@ namespace MessageAppBackend.Controllers
             _chatInvitationService = chatInvitationService;
         }
         [HttpGet]
-        public async Task<ActionResult<List<ChatInvitation>>> GetUserActiveInvitations(Guid userId)
+        public async Task<ActionResult<List<ChatInvitationDto>>> GetUserActiveInvitations(Guid userId)
         {
             var result = await _chatInvitationService.GetUserActiveInvitations(userId);
             if (result.IsFailed)
@@ -44,9 +44,10 @@ namespace MessageAppBackend.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> UpdateInvitationStatus(Guid chatId, Guid invitedUserId, InvitationStatus newStatus)
+        public async Task<IActionResult> UpdateInvitationStatus([FromBody]UpdateInvitationStatusDto updateInvitationStatusDto)
         {
-            var result = await _chatInvitationService.UpdateInvitationStatus(chatId, invitedUserId, newStatus);
+            var result = await _chatInvitationService
+                .UpdateInvitationStatus(updateInvitationStatusDto);
             if (result.IsFailed)
             {
                 return ErrorMapper.MapErrorToResponse(result.Errors.First());

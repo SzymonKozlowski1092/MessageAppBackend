@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace MessageAppBackend.DTO
+namespace MessageAppBackend.DTO.ChatInvitationDTOs
 {
     public class SendInvitationDto
     {

@@ -1,6 +1,6 @@
 ﻿using FluentResults;
 using MessageAppBackend.DbModels;
-using MessageAppBackend.DTO;
+using MessageAppBackend.DTO.AccountDTOs;
 
 namespace MessageAppBackend.Services.Interfaces
 {

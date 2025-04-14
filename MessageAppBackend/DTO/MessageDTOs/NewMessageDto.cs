@@ -1,7 +1,7 @@
 ﻿using MessageAppBackend.DbModels;
 using System.ComponentModel.DataAnnotations;
 
-namespace MessageAppBackend.DTO
+namespace MessageAppBackend.DTO.MessageDTOs
 {
     public class NewMessageDto
     {
