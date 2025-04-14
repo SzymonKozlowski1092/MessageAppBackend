@@ -1,4 +1,5 @@
-﻿using MessageAppBackend.DTO;
+﻿using MessageAppBackend.Common.Helpers;
+using MessageAppBackend.DTO;
 using MessageAppBackend.Services;
 using MessageAppBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -12,9 +13,9 @@ namespace MessageAppBackend.Controllers
     {
         IAccountService _accountService;
         ITokenService _tokenService;
-        public AccountController(IAccountService accontService, ITokenService tokenService)
+        public AccountController(IAccountService accountService, ITokenService tokenService)
         {
-            _accountService = accontService;
+            _accountService = accountService;
             _tokenService = tokenService;
         }
 
@@ -25,21 +26,26 @@ namespace MessageAppBackend.Controllers
             {
                 return BadRequest(ModelState);
             }
+  
+            var result = await _accountService.Register(registerUserDto);
+            if (result.IsFailed)
+            {
+                return ErrorMapper.MapErrorToResponse(result.Errors.First());
+            }
             
-            await _accountService.Register(registerUserDto);
             return Ok();
         }
 
         [HttpPost("Login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequestDto)
+        public async Task<ActionResult<string>> Login([FromBody] LoginRequestDto loginRequestDto)
         {
-            var loggedUser = await _accountService.Login(loginRequestDto)!;
-            if(loggedUser is null)
+            var result = await _accountService.Login(loginRequestDto)!;
+            if(result.IsFailed)
             {
-                return Unauthorized("Nieprawidłowa nazwa użytkownika lub hasło.");
+                return ErrorMapper.MapErrorToResponse(result.Errors.First());
             }
 
-            var token = _tokenService.GenerateJwtToken(loggedUser);
+            var token = _tokenService.GenerateJwtToken(result.Value);
             return Ok(new {Token = token});
         }
     }

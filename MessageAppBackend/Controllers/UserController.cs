@@ -1,4 +1,6 @@
-﻿using MessageAppBackend.Services.Interfaces;
+﻿using MessageAppBackend.Common.Helpers;
+using MessageAppBackend.DbModels;
+using MessageAppBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,23 +18,23 @@ namespace MessageAppBackend.Controllers
         }
 
         [HttpGet("/{userId}/chats")]
-        public async Task<IActionResult> GetChats(Guid userId) 
+        public async Task<ActionResult<List<Chat>>> GetChats(Guid userId) 
         { 
-            var chats = await _userService.GetChats(userId);
-            if (chats == null || !chats.Any())
+            var result = await _userService.GetChats(userId);
+            if (result.IsFailed)
             {
-                return NotFound($"No chats found for user with id: {userId}.");
+                return ErrorMapper.MapErrorToResponse(result.Errors.First());
             }
-            return Ok(chats);
+            return Ok(result.Value);
         }
 
         [HttpDelete("{userId}/leave/{chatId}")]
         public async Task<IActionResult> LeaveChat(Guid userId, Guid chatId)
         {
             var result = await _userService.LeaveChat(userId, chatId);
-            if (result == false)
+            if (result.IsFailed)
             {
-                return NotFound($"User with id: {userId} is not a member of chat with id: {chatId}.");
+                return ErrorMapper.MapErrorToResponse(result.Errors.First());
             }
             
             return NoContent();

@@ -1,4 +1,5 @@
 ﻿using FluentResults;
+using MessageAppBackend.Common.Enums;
 using MessageAppBackend.Database;
 using MessageAppBackend.DbModels;
 using MessageAppBackend.Services.Interfaces;
@@ -24,7 +25,8 @@ namespace MessageAppBackend.Services
 
             if (messages is null || !messages.Any())
             {
-                return Result.Fail($"No messages found in chat with id: {chatId}.");
+                return Result.Fail(new Error($"No messages found in chat with id: {chatId}.")
+                    .WithMetadata("Code", ErrorCode.NotFound));
             }
 
             return Result.Ok(messages);
@@ -39,7 +41,8 @@ namespace MessageAppBackend.Services
 
             if (users is null || !users.Any())
             {
-                Result.Fail($"No users found in chat with id: {chatId}.");
+                return Result.Fail(new Error($"No users found in chat with id: {chatId}.")
+                    .WithMetadata("Code", ErrorCode.NotFound));
             }
 
             return Result.Ok(users)!;

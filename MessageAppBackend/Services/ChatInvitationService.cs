@@ -5,7 +5,6 @@ using MessageAppBackend.DbModels;
 using MessageAppBackend.DTO;
 using MessageAppBackend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 
 namespace MessageAppBackend.Services
 {
@@ -38,7 +37,8 @@ namespace MessageAppBackend.Services
 
             if (invitations is null || !invitations.Any())
             {
-                return Result.Fail($"No invitations found for user with id: {userId}");
+                return Result.Fail(new Error($"No invitations found for user with id: {userId}")
+                    .WithMetadata("Code", ErrorCode.NotFound));
             }
 
             return Result.Ok(invitations);
@@ -50,7 +50,8 @@ namespace MessageAppBackend.Services
                 .FirstOrDefaultAsync(c => c.Id == sendInvitationDto.ChatId);
             if (chat is null)
             {
-                return Result.Fail($"Chat with id: {sendInvitationDto.ChatId} not found");
+                return Result.Fail(new Error($"Chat with id: {sendInvitationDto.ChatId} not found")
+                    .WithMetadata("Code", ErrorCode.NotFound));
             }
 
             var invitedUserResult = await GetUser(sendInvitationDto.InvitedUserId, $"Invited user with id {sendInvitationDto.InvitedUserId} not found");
@@ -62,7 +63,8 @@ namespace MessageAppBackend.Services
 
             if (chat.Users!.Any(u => u.UserId == sendInvitationDto.InvitedUserId))
             {
-                return Result.Fail($"User with id: {sendInvitationDto.InvitedUserId} already exists in chat with id {sendInvitationDto.ChatId}");
+                return Result.Fail(new Error($"User with id: {sendInvitationDto.InvitedUserId} already exists in chat with id {sendInvitationDto.ChatId}")
+                    .WithMetadata("Code", ErrorCode.AlreadyExists));
             }
 
             var invitedByUserResult = await GetUser(sendInvitationDto.InvitedByUserId, $"Invitation sender with id: {sendInvitationDto.InvitedByUserId} not found");
@@ -78,7 +80,8 @@ namespace MessageAppBackend.Services
                 ci.InvitedByUserId == sendInvitationDto.InvitedByUserId &&
                 ci.Status == InvitationStatus.Pending))
             {
-                return Result.Fail("This invitation already exists");
+                return Result.Fail(new Error("This invitation already exists")
+                    .WithMetadata("Code", ErrorCode.AlreadyExists));
             }
 
             var chatInvitation = new ChatInvitation
@@ -101,7 +104,9 @@ namespace MessageAppBackend.Services
             var user = await _dbContext.Users
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
-            return user is null ? Result.Fail(notFoundMessage) : Result.Ok(user);
+            return user is null ? 
+                Result.Fail(new Error(notFoundMessage).WithMetadata("Code", ErrorCode.NotFound)) :
+                Result.Ok(user);
         }
         private async Task<Result<ChatInvitation>> GetInvitation(Guid chatId, Guid invitedUserId)
         {
@@ -112,7 +117,7 @@ namespace MessageAppBackend.Services
                 && ci.Status == InvitationStatus.Pending);
 
             return invitation is null ? 
-                Result.Fail($"Invitation does not exist for chat with id: {chatId} and user with id: {invitedUserId}") : 
+                Result.Fail(new Error($"Invitation does not exist for chat with id: {chatId} and user with id: {invitedUserId}").WithMetadata("Code", ErrorCode.NotFound)) : 
                 Result.Ok(invitation);
         }
     }

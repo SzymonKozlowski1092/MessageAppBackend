@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using FluentResults;
+using MessageAppBackend.Common.Enums;
 using MessageAppBackend.Database;
 using MessageAppBackend.DbModels;
 using MessageAppBackend.DTO;
@@ -26,7 +27,8 @@ namespace MessageAppBackend.Services
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             return messageResult is null
-                ? Result.Fail($"Message with id: {id} not found")
+                ? Result.Fail(new Error($"Message with id: {id} not found")
+                    .WithMetadata("Code", ErrorCode.NotFound))
                 : Result.Ok(messageResult);
         }
         public async Task<Result<Message>> AddMessage(NewMessageDto newMessageDto)
@@ -34,7 +36,8 @@ namespace MessageAppBackend.Services
             var newMessage = _mapper.Map<Message>(newMessageDto);
             if(newMessage is null)
             {
-                return Result.Fail("Error with creating new message");
+                return Result.Fail(new Error("Error with creating new message")
+                    .WithMetadata("Code", ErrorCode.FailedOperation));
             }
 
             await _dbContext.AddAsync(newMessage);
@@ -52,10 +55,9 @@ namespace MessageAppBackend.Services
             var message = messageResult.Value;
 
             _dbContext.Messages.Remove(message);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
             return Result.Ok();
         }
-
         public async Task<Result> UpdateMessage(Guid id, UpdateMessageDto updateMessageDto)
         {
             var messageResult = await GetMessage(id);
@@ -66,7 +68,7 @@ namespace MessageAppBackend.Services
             var message = messageResult.Value;
 
             message.Content = updateMessageDto.Content;
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
 
             return Result.Ok();
         }
