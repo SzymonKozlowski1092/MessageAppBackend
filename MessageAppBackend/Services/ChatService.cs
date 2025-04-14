@@ -4,7 +4,6 @@ using MessageAppBackend.Database;
 using MessageAppBackend.DbModels;
 using MessageAppBackend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 
 namespace MessageAppBackend.Services
 {
@@ -46,6 +45,34 @@ namespace MessageAppBackend.Services
             }
 
             return Result.Ok(users)!;
+        }
+
+        public async Task<Result<Chat>> CreateNewChat(Guid userId, string chatName)
+        {
+            var user = _dbContext.Users.FirstOrDefault(u => u.Id == userId);
+            if(user is null)
+            {
+                return Result.Fail(new Error($"user with id {userId} for whom you tried to create a chat was not found")
+                    .WithMetadata("Code", ErrorCode.NotFound));
+            }
+            var chat = new Chat
+            {
+                Name = chatName,
+                CreatedAt = DateTime.UtcNow,
+                Users = new List<UserChat>()
+            };
+
+            var userChat = new UserChat
+            {
+                UserId = userId,
+                ChatId = chat.Id
+            };
+
+            chat.Users.Add(userChat);
+            _dbContext.Chats.Add(chat);
+            await _dbContext.SaveChangesAsync();
+            
+            return Result.Ok(chat);
         }
     }
 }
