@@ -1,4 +1,5 @@
-﻿using MessageAppBackend.DbModels;
+﻿using MessageAppBackend.Common.Helpers;
+using MessageAppBackend.DbModels;
 using MessageAppBackend.DTO;
 using MessageAppBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -21,46 +22,46 @@ namespace MessageAppBackend.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Message>> GetMessage([FromRoute] Guid id) 
         {
-            var message = await _messageService.GetMessage(id);
-            if(message is null)
+            var result = await _messageService.GetMessage(id);
+            if(result.IsFailed)
             {
-                return NotFound($"Message with ID '{id}' not found.");
+                return ErrorMapper.MapErrorToResponse(result.Errors.First());
             }
 
-            return Ok(message);
+            return Ok(result.Value);
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteMessage([FromRoute] Guid id)
+        public async Task<IActionResult> DeleteMessage([FromRoute] Guid id)
         {
             var result = await _messageService.DeleteMessage(id);
-            if (result == false) 
+            if (result.IsFailed) 
             {
-                return NotFound($"Message with ID '{id}' not found.");
+                return ErrorMapper.MapErrorToResponse(result.Errors.First());
             }
 
             return NoContent();
         }
 
         [HttpPost]
-        public async Task<ActionResult> AddMessage([FromBody] NewMessageDto newMessageDto)
+        public async Task<IActionResult> AddMessage([FromBody] NewMessageDto newMessageDto)
         {
             if (!ModelState.IsValid) 
             {
                 return BadRequest(ModelState);
             }
             
-            var newMessage = await _messageService.AddMessage(newMessageDto);
-            if(newMessage is null)
+            var result = await _messageService.AddMessage(newMessageDto);
+            if(result.IsFailed)
             {
-                return BadRequest();
+                return ErrorMapper.MapErrorToResponse(result.Errors.First());
             }
 
-            return CreatedAtAction(nameof(GetMessage), new { id = newMessage.Id }, newMessage);
+            return CreatedAtAction(nameof(GetMessage), new { id = result.Value.Id }, result.Value);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateMessage([FromRoute]Guid id, [FromBody]UpdateMessageDto updateMessageDto)
+        public async Task<IActionResult> UpdateMessage([FromRoute]Guid id, [FromBody]UpdateMessageDto updateMessageDto)
         {
             if (!ModelState.IsValid)
             {
@@ -68,9 +69,9 @@ namespace MessageAppBackend.Controllers
             }
             
             var result = await _messageService.UpdateMessage(id, updateMessageDto);
-            if(result == false)
+            if(result.IsFailed)
             {
-                return NotFound($"Message with ID '{updateMessageDto.Id}' not found.");
+                return ErrorMapper.MapErrorToResponse(result.Errors.First());
             }
             
             return NoContent();

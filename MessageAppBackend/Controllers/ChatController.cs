@@ -1,4 +1,6 @@
-﻿using MessageAppBackend.Services.Interfaces;
+﻿using MessageAppBackend.Common.Helpers;
+using MessageAppBackend.DbModels;
+using MessageAppBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -16,26 +18,26 @@ namespace MessageAppBackend.Controllers
             _chatService = chatService;
         }
 
-        [HttpGet("messages/{chatId}")]
-        public async Task<IActionResult> GetMessages(Guid chatId)
+        [HttpGet("Messages/{chatId}")]
+        public async Task<ActionResult<List<Message>>> GetMessages(Guid chatId)
         {
-            var messages = await _chatService.GetMessages(chatId);
-            if (messages == null)
+            var result = await _chatService.GetMessages(chatId);
+            if (result.IsFailed)
             {
-                return NotFound($"No messages found for chat with id: {chatId}.");
+                return ErrorMapper.MapErrorToResponse(result.Errors.First());
             }
-            return Ok(messages);
+            return Ok(result.Value);
         }
 
         [HttpGet("users/{chatId}")]
-        public async Task<IActionResult> GetUsers(Guid chatId)
+        public async Task<ActionResult<List<User>>> GetUsers(Guid chatId)
         {
-            var users = await _chatService.GetUsers(chatId);
-            if (users == null)
+            var result = await _chatService.GetUsers(chatId);
+            if (result.IsFailed)
             {
-                return NotFound($"No users found for chat with id: {chatId}.");
+                return ErrorMapper.MapErrorToResponse(result.Errors.First());
             }
-            return Ok(users);
+            return Ok(result.Value);
         }
     }
 }

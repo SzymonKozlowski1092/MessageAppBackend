@@ -24,6 +24,7 @@ namespace MessageAppBackend.Services
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Username),
                 new Claim(ClaimTypes.Name, user.DisplayName),
+                new Claim("UserId", user.Id.ToString())
             };
 
             var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha256Signature);

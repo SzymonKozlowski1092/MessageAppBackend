@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using MessageAppBackend.Database;
 using MessageAppBackend.Services.Interfaces;
 using FluentResults;
+using MessageAppBackend.Common.Enums;
 
 namespace MessageAppBackend.Services
 {
@@ -27,13 +28,15 @@ namespace MessageAppBackend.Services
             var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == loginRequestDto.Username);
             if(user is null)
             {
-                return Result.Fail("Incorrect username or password");
+                return Result.Fail(new Error("Incorrect username or password")
+                    .WithMetadata("Code", ErrorCode.AuthenticationFailed));
             }
 
             var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, loginRequestDto.Password);
             if(result == PasswordVerificationResult.Failed)
             {
-                return Result.Fail("Incorrect username or password");
+                return Result.Fail(new Error("Incorrect username or password")
+                    .WithMetadata("Code", ErrorCode.AuthenticationFailed));
             }
 
             return Result.Ok(user);
@@ -47,7 +50,8 @@ namespace MessageAppBackend.Services
             bool userExists = await _dbContext.Users.AnyAsync(u => u.Email == registerUserDto.Email);
             if (userExists) 
             {
-                return Result.Fail($"User with email: {registerUserDto.Email} already exists");
+                return Result.Fail(new Error($"User with email: {registerUserDto.Email} already exists")
+                    .WithMetadata("Code", ErrorCode.AlreadyExists));
             }
 
             var newLecturer = new User
@@ -60,7 +64,7 @@ namespace MessageAppBackend.Services
             newLecturer.PasswordHash = _passwordHasher.HashPassword(newLecturer, registerUserDto.Password);
 
             _dbContext.Users.Add(newLecturer);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
             return Result.Ok();
         }
     }
