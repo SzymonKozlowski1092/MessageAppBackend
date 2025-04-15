@@ -18,16 +18,48 @@ namespace MessageAppBackend.Services
             _dbContext = dbContext;
             _mapper = mapper;
         }
-        public async Task<Result> UpdateInvitationStatus(UpdateInvitationStatusDto updateInvitationStatusDto)
+
+        public async Task<Result> AcceptInvitation(UpdateInvitationStatusDto updateInvitationStatusDto)
         {
             var invitationResult = await GetInvitation(updateInvitationStatusDto.ChatId, updateInvitationStatusDto.InvitedUserId);
             if (invitationResult.IsFailed)
             {
                 return invitationResult.ToResult();
             }
-            invitationResult.Value.Status = updateInvitationStatusDto.NewStatus;
-
+            
+            var userChat = new UserChat
+            {
+                ChatId = updateInvitationStatusDto.ChatId,
+                UserId = updateInvitationStatusDto.InvitedUserId
+            };
+            
+            var chat = await _dbContext.Chats
+                .Include(c => c.Users)
+                .FirstOrDefaultAsync(c => c.Id == updateInvitationStatusDto.ChatId);
+            if(chat is null)
+            {
+                return Result.Fail(new Error($"Error with joining user: {updateInvitationStatusDto.InvitedUserId} to chat: {updateInvitationStatusDto.ChatId}. Chat not found")
+                    .WithMetadata("Code", ErrorCode.NotFound));
+            }
+            
+            chat.Users!.Add(userChat);
+            invitationResult.Value.Status = InvitationStatus.Accepted;
             await _dbContext.SaveChangesAsync();
+
+            return Result.Ok();
+        }
+        public async Task<Result> DeclineInvitation(UpdateInvitationStatusDto updateInvitationStatusDto)
+        {
+            var invitationResult = await GetInvitation(updateInvitationStatusDto.ChatId, updateInvitationStatusDto.InvitedUserId);
+            if (invitationResult.IsFailed)
+            {
+                return invitationResult.ToResult();
+            }
+            var invitation = invitationResult.Value;
+
+            invitation.Status = InvitationStatus.Declined;
+            await _dbContext.SaveChangesAsync();
+
             return Result.Ok();
         }
         public async Task<Result<List<ChatInvitationDto>>> GetUserActiveInvitations(Guid userId)

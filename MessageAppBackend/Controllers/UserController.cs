@@ -17,8 +17,8 @@ namespace MessageAppBackend.Controllers
             _userService = userService;
         }
 
-        [HttpGet("/{UserId}/chats")]
-        public async Task<ActionResult<List<ChatDto>>> GetChats(Guid userId) 
+        [HttpGet("/{userId}/chats")]
+        public async Task<ActionResult<List<ChatDto>>> GetChats([FromRoute]Guid userId) 
         { 
             var result = await _userService.GetChats(userId);
             if (result.IsFailed)
@@ -28,8 +28,8 @@ namespace MessageAppBackend.Controllers
             return Ok(result.Value);
         }
 
-        [HttpDelete("{UserId}/leave/{chatId}")]
-        public async Task<IActionResult> LeaveChat(LeaveChatDto leaveChatDto)
+        [HttpDelete]
+        public async Task<IActionResult> LeaveChat([FromBody]LeaveChatDto leaveChatDto)
         {
             var result = await _userService.LeaveChat(leaveChatDto);
             if (result.IsFailed)

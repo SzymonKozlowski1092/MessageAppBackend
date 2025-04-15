@@ -11,7 +11,6 @@ using Microsoft.OpenApi.Models;
 using NLog.Web;
 using MessageAppBackend.Middleware;
 using MessageAppBackend.Common;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +43,7 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IChatInvitationService, ChatInvitationService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 builder.Services.AddAuthentication(options =>

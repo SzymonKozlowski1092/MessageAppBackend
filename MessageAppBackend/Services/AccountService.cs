@@ -20,7 +20,7 @@ namespace MessageAppBackend.Services
             _passwordHasher = passwordHasher;
         }
 
-        public async Task<Result<User>>? Login(LoginRequestDto loginRequestDto)
+        public async Task<Result<User>> Login(LoginRequestDto loginRequestDto)
         {
             if (loginRequestDto is null)
                 throw new ArgumentNullException(nameof(loginRequestDto));

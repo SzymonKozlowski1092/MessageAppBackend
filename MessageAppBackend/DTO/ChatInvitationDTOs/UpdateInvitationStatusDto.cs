@@ -6,6 +6,5 @@ namespace MessageAppBackend.DTO.ChatInvitationDTOs
     {
         public Guid ChatId { get; set; }
         public Guid InvitedUserId { get; set; }
-        public InvitationStatus NewStatus { get; set; }
     }
 }

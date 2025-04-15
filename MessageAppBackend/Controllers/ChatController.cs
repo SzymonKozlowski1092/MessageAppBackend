@@ -1,6 +1,8 @@
 ﻿using MessageAppBackend.Common.Helpers;
 using MessageAppBackend.DbModels;
 using MessageAppBackend.DTO.ChatDTOs;
+using MessageAppBackend.DTO.MessageDTOs;
+using MessageAppBackend.DTO.UserDTOs;
 using MessageAppBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,7 +21,7 @@ namespace MessageAppBackend.Controllers
         }
 
         [HttpGet("Messages/{chatId}")]
-        public async Task<ActionResult<List<Message>>> GetMessages(Guid chatId)
+        public async Task<ActionResult<List<MessageDto>>> GetMessages([FromRoute]Guid chatId)
         {
             var result = await _chatService.GetMessages(chatId);
             if (result.IsFailed)
@@ -30,7 +32,7 @@ namespace MessageAppBackend.Controllers
         }
 
         [HttpGet("users/{chatId}")]
-        public async Task<ActionResult<List<User>>> GetUsers(Guid chatId)
+        public async Task<ActionResult<List<UserDto>>> GetUsers([FromRoute]Guid chatId)
         {
             var result = await _chatService.GetUsers(chatId);
             if (result.IsFailed)
@@ -40,8 +42,8 @@ namespace MessageAppBackend.Controllers
             return Ok(result.Value);
         }
 
-        [HttpPost("create/user/{UserId}")]
-        public async Task<ActionResult<Chat>> CreateNewChat(CreateChatDto createChatDto)
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateNewChat([FromBody]CreateChatDto createChatDto)
         {
             var result = await _chatService.CreateNewChat(createChatDto);
             if (result.IsFailed)

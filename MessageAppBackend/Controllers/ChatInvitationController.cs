@@ -16,7 +16,7 @@ namespace MessageAppBackend.Controllers
             _chatInvitationService = chatInvitationService;
         }
         [HttpGet]
-        public async Task<ActionResult<List<ChatInvitationDto>>> GetUserActiveInvitations(Guid userId)
+        public async Task<ActionResult<List<ChatInvitationDto>>> GetUserActiveInvitations([FromBody]Guid userId)
         {
             var result = await _chatInvitationService.GetUserActiveInvitations(userId);
             if (result.IsFailed)
@@ -43,11 +43,23 @@ namespace MessageAppBackend.Controllers
             return Created();
         }
 
-        [HttpPut]
-        public async Task<IActionResult> UpdateInvitationStatus([FromBody]UpdateInvitationStatusDto updateInvitationStatusDto)
+        [HttpPut("AcceptInvitation")]
+        public async Task<IActionResult> AcceptInvitation([FromBody]UpdateInvitationStatusDto updateInvitationStatusDto)
         {
             var result = await _chatInvitationService
-                .UpdateInvitationStatus(updateInvitationStatusDto);
+                .AcceptInvitation(updateInvitationStatusDto);
+            if (result.IsFailed)
+            {
+                return ErrorMapper.MapErrorToResponse(result.Errors.First());
+            }
+
+            return NoContent();
+        }
+        [HttpPut("DeclineInvitation")]
+        public async Task<IActionResult> DeclineInvitation([FromBody] UpdateInvitationStatusDto updateInvitationStatusDto)
+        {
+            var result = await _chatInvitationService
+                .DeclineInvitation(updateInvitationStatusDto);
             if (result.IsFailed)
             {
                 return ErrorMapper.MapErrorToResponse(result.Errors.First());

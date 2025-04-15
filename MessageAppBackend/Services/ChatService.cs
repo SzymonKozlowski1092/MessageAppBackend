@@ -55,7 +55,7 @@ namespace MessageAppBackend.Services
             return Result.Ok(usersDto)!;
         }
 
-        public async Task<Result<ChatDto>> CreateNewChat(CreateChatDto createChatDto)
+        public async Task<Result> CreateNewChat(CreateChatDto createChatDto)
         {
             var user = _dbContext.Users.FirstOrDefault(u => u.Id == createChatDto.UserId);
             if(user is null)
@@ -80,8 +80,7 @@ namespace MessageAppBackend.Services
             _dbContext.Chats.Add(chat);
             await _dbContext.SaveChangesAsync();
             
-            var chatDto = _mapper.Map<ChatDto>(chat);
-            return Result.Ok(chatDto);
+            return Result.Ok();
         }
     }
 }

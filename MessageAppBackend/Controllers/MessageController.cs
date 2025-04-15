@@ -60,8 +60,8 @@ namespace MessageAppBackend.Controllers
             return Created();
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateMessage(UpdateMessageDto updateMessageDto)
+        [HttpPut]
+        public async Task<IActionResult> UpdateMessage([FromBody]UpdateMessageDto updateMessageDto)
         {
             if (!ModelState.IsValid)
             {

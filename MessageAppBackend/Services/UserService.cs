@@ -34,7 +34,6 @@ namespace MessageAppBackend.Services
                 return Result.Fail(new Error($"No chats found for user with id: {userId}.")
                     .WithMetadata("Code", ErrorCode.NotFound));
             }
-
             var chatsDto = _mapper.Map<List<ChatDto>>(chats);
 
             return Result.Ok(chatsDto);
@@ -53,6 +52,7 @@ namespace MessageAppBackend.Services
 
             _dbContext.UserChats.Remove(userChat!);
             await _dbContext.SaveChangesAsync();
+            
             return Result.Ok();
         }
     }
