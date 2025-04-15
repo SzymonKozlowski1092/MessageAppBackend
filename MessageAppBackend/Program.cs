@@ -11,8 +11,14 @@ using Microsoft.OpenApi.Models;
 using NLog.Web;
 using MessageAppBackend.Middleware;
 using MessageAppBackend.Common;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddUserSecrets<Program>();
 
 builder.Host.UseNLog();
 
@@ -20,12 +26,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<MessageAppDbContext>((opt) =>
-{
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    opt.UseSqlServer(connectionString);
-});
-
+builder.Services.AddDbContext<MessageAppDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorNumbersToAdd: null
+        )
+    )
+);
 builder.Services.AddScoped<ErrorHandlingMiddleware>();
 builder.Services.AddScoped<MessageAppDbContext>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
