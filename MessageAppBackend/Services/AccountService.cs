@@ -47,23 +47,30 @@ namespace MessageAppBackend.Services
             if (registerUserDto is null)
                 throw new ArgumentNullException(nameof(registerUserDto));
 
-            bool userExists = await _dbContext.Users.AnyAsync(u => u.Email == registerUserDto.Email);
-            if (userExists) 
+            bool isExistsUserWithSameEmail = await _dbContext.Users.AnyAsync(u => u.Email == registerUserDto.Email);
+            if (isExistsUserWithSameEmail) 
             {
                 return Result.Fail(new Error($"User with email: {registerUserDto.Email} already exists")
                     .WithMetadata("Code", ErrorCode.AlreadyExists));
             }
 
-            var newLecturer = new User
+            bool isExistsUserWithSameUsername = await _dbContext.Users.AnyAsync(u => u.Username == registerUserDto.Username);
+            if (isExistsUserWithSameUsername)
+            {
+                return Result.Fail(new Error($"User with username: {registerUserDto.Username} already exists")
+                    .WithMetadata("Code", ErrorCode.AlreadyExists));
+            }
+
+            var newUser = new User
             {
                 Username = registerUserDto.Username,
                 DisplayName = registerUserDto.DisplayName,
                 Email = registerUserDto.Email,
             };
 
-            newLecturer.PasswordHash = _passwordHasher.HashPassword(newLecturer, registerUserDto.Password);
+            newUser.PasswordHash = _passwordHasher.HashPassword(newUser, registerUserDto.Password);
 
-            _dbContext.Users.Add(newLecturer);
+            _dbContext.Users.Add(newUser);
             await _dbContext.SaveChangesAsync();
             return Result.Ok();
         }

@@ -83,7 +83,7 @@ namespace MessageAppBackend.Services
         {
             var chat = await _dbContext.Chats
                 .Include(c => c.Users)
-                .FirstOrDefaultAsync(c => c.Id == sendInvitationDto.ChatId);
+                .FirstOrDefaultAsync(c => c.Id == sendInvitationDto.ChatId && !c.IsDeleted);
             if (chat is null)
             {
                 return Result.Fail(new Error($"Chat with id: {sendInvitationDto.ChatId} not found")
@@ -147,10 +147,12 @@ namespace MessageAppBackend.Services
         private async Task<Result<ChatInvitation>> GetInvitation(Guid chatId, Guid invitedUserId)
         {
             var invitation = await _dbContext.ChatInvitations
+                .Include(ci => ci.Chat)
                 .FirstOrDefaultAsync(
                 ci => ci.ChatId == chatId &&
-                ci.InvitedUserId == invitedUserId
-                && ci.Status == InvitationStatus.Pending);
+                !ci.Chat.IsDeleted &&
+                ci.InvitedUserId == invitedUserId &&
+                ci.Status == InvitationStatus.Pending);
 
             return invitation is null ? 
                 Result.Fail(new Error($"Invitation does not exist for chat with id: {chatId} and user with id: {invitedUserId}").WithMetadata("Code", ErrorCode.NotFound)) : 

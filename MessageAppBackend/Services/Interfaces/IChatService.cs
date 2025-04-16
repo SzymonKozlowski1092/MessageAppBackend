@@ -10,5 +10,6 @@ namespace MessageAppBackend.Services.Interfaces
         public Task<Result<List<MessageDto>>> GetMessages(Guid chatId);
         public Task<Result<List<UserDto>>> GetUsers(Guid chatId);
         public Task<Result> CreateNewChat(CreateChatDto createChatDto);
+        public Task<Result> DeleteChat(DeleteChatDto deleteChatDto);
     }
 }
