@@ -57,7 +57,7 @@ namespace MessageAppBackend.Services
 
         public async Task<Result> CreateNewChat(CreateChatDto createChatDto)
         {
-            var user = _dbContext.Users.FirstOrDefault(u => u.Id == createChatDto.UserId);
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == createChatDto.UserId);
             if(user is null)
             {
                 return Result.Fail(new Error($"user with id {createChatDto.UserId} for whom you tried to create a chat was not found")
@@ -78,6 +78,33 @@ namespace MessageAppBackend.Services
 
             chat.Users.Add(userChat);
             _dbContext.Chats.Add(chat);
+            await _dbContext.SaveChangesAsync();
+            
+            return Result.Ok();
+        }
+
+        public async Task<Result> DeleteChat(DeleteChatDto deleteChatDto)
+        {
+            var chat = await _dbContext.Chats
+                .Include(c => c.Users)
+                .FirstOrDefaultAsync(c => c.Id == deleteChatDto.ChatId && !c.IsDeleted);
+            if (chat is null)
+            {
+                return Result.Fail(new Error($"Chat with id {deleteChatDto.ChatId} was not found")
+                    .WithMetadata("Code", ErrorCode.NotFound));
+            }
+            if (!await _dbContext.UserChats.AnyAsync(uc => uc.ChatId == deleteChatDto.ChatId && uc.UserId == deleteChatDto.UserId))
+            {
+                return Result.Fail(new Error($"User: {deleteChatDto.UserId} is not a chat: {deleteChatDto.ChatId} member")
+                    .WithMetadata("Code", ErrorCode.Forbidden));
+            }
+           
+            //TODO: ADD A USER ROLE IN THE UserChat ENTITY AND CHECK THERE IF THE USER IS THE ADMIN OF THE CHAT
+            
+            chat.IsDeleted = true;
+            chat.DeletedAt = DateTime.UtcNow;
+            
+            _dbContext.Chats.Update(chat);
             await _dbContext.SaveChangesAsync();
             
             return Result.Ok();

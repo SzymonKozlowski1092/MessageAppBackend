@@ -28,7 +28,7 @@ namespace MessageAppBackend.Controllers
             return Ok(result.Value);
         }
 
-        [HttpDelete]
+        [HttpDelete("LeaveChat")]
         public async Task<IActionResult> LeaveChat([FromBody]LeaveChatDto leaveChatDto)
         {
             var result = await _userService.LeaveChat(leaveChatDto);

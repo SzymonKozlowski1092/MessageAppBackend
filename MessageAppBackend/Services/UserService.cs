@@ -23,8 +23,7 @@ namespace MessageAppBackend.Services
         public async Task<Result<List<ChatDto>>> GetChats(Guid userId)
         {
             var chats = await _dbContext.Chats
-                .Where(c => c.Users!
-                .Any(uc => uc.UserId == userId))
+                .Where(c => !c.IsDeleted && c.Users!.Any(uc => uc.UserId == userId))
                 .Include(c => c.Messages)
                 .Include(c => c.Users)
                 .ToListAsync();

@@ -15,8 +15,8 @@ namespace MessageAppBackend.Controllers
         {
             _chatInvitationService = chatInvitationService;
         }
-        [HttpGet]
-        public async Task<ActionResult<List<ChatInvitationDto>>> GetUserActiveInvitations([FromBody]Guid userId)
+        [HttpGet("user/{userId}")]
+        public async Task<ActionResult<List<ChatInvitationDto>>> GetUserActiveInvitations([FromRoute]Guid userId)
         {
             var result = await _chatInvitationService.GetUserActiveInvitations(userId);
             if (result.IsFailed)

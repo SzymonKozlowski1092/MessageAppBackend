@@ -32,8 +32,23 @@ namespace MessageAppBackend.Services
         }
         public async Task<Result> AddMessage(NewMessageDto newMessageDto)
         {
+            bool chatExists = await _dbContext.Chats.AnyAsync(c => c.Id == newMessageDto.ChatId && !c.IsDeleted);
+            bool userExists = await _dbContext.Users.AnyAsync(u => u.Id == newMessageDto.SenderId);
+
+            if (!chatExists || !userExists)
+            {
+                return Result.Fail(new Error("Unable to add message, chat or user not found")
+                    .WithMetadata("Code", ErrorCode.NotFound));
+            }
+
+            if(!await _dbContext.UserChats.AnyAsync(uc => uc.UserId == newMessageDto.SenderId && uc.ChatId == newMessageDto.ChatId))
+            {
+                return Result.Fail(new Error("Unable to add message, user is not a member of the chat")
+                    .WithMetadata("Code", ErrorCode.Forbidden));
+            }
+            
             var newMessage = _mapper.Map<Message>(newMessageDto);
-            if(newMessage is null)
+            if (newMessage is null)
             {
                 return Result.Fail(new Error("Error with creating new message")
                     .WithMetadata("Code", ErrorCode.FailedOperation));
@@ -59,7 +74,13 @@ namespace MessageAppBackend.Services
             return Result.Ok();
         }
         public async Task<Result> UpdateMessage(UpdateMessageDto updateMessageDto)
-        {
+        { 
+            if(!await _dbContext.Messages.AnyAsync(m => m.Id == updateMessageDto.Id && m.SenderId == updateMessageDto.SenderId))
+            {
+                return Result.Fail(new Error("Unable to update message, user is not the sender")
+                    .WithMetadata("Code", ErrorCode.Forbidden));
+            }
+
             var message = await _dbContext.Messages.FirstOrDefaultAsync(m => m.Id == updateMessageDto.Id)!;
             if (message is null)
             {
