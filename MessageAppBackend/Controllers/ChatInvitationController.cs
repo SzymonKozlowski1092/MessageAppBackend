@@ -15,6 +15,7 @@ namespace MessageAppBackend.Controllers
         {
             _chatInvitationService = chatInvitationService;
         }
+
         [HttpGet("user/{userId}")]
         public async Task<ActionResult<List<ChatInvitationDto>>> GetUserActiveInvitations([FromRoute]Guid userId)
         {
