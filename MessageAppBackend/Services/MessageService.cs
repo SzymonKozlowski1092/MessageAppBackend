@@ -13,10 +13,12 @@ namespace MessageAppBackend.Services
     {
         private readonly MessageAppDbContext _dbContext;
         private readonly IMapper _mapper;
-        public MessageService(MessageAppDbContext dbContext, IMapper mapper) 
+        private readonly ICurrentUserService _currentUserService;
+        public MessageService(MessageAppDbContext dbContext, IMapper mapper, ICurrentUserService currentUserService) 
         {
             _dbContext = dbContext;
             _mapper = mapper;
+            _currentUserService = currentUserService;
         }
     
         public async Task<Result<MessageDto>> GetMessage(Guid id)
@@ -30,18 +32,24 @@ namespace MessageAppBackend.Services
                     .WithMetadata("Code", ErrorCode.NotFound))
                 : Result.Ok(_mapper.Map<MessageDto>(messageResult));
         }
+
         public async Task<Result> AddMessage(NewMessageDto newMessageDto)
         {
+            var getSenderIdResult = _currentUserService.GetUserId();
+            if (getSenderIdResult.IsFailed)
+            {
+                return Result.Fail(getSenderIdResult.Errors.First());
+            }
+            var senderId = getSenderIdResult.Value;
+            
             bool chatExists = await _dbContext.Chats.AnyAsync(c => c.Id == newMessageDto.ChatId && !c.IsDeleted);
-            bool userExists = await _dbContext.Users.AnyAsync(u => u.Id == newMessageDto.SenderId);
-
-            if (!chatExists || !userExists)
+            if (!chatExists)
             {
                 return Result.Fail(new Error("Unable to add message, chat or user not found")
                     .WithMetadata("Code", ErrorCode.NotFound));
             }
 
-            if(!await _dbContext.UserChats.AnyAsync(uc => uc.UserId == newMessageDto.SenderId && uc.ChatId == newMessageDto.ChatId))
+            if(!await _dbContext.UserChats.AnyAsync(uc => uc.UserId == senderId && uc.ChatId == newMessageDto.ChatId))
             {
                 return Result.Fail(new Error("Unable to add message, user is not a member of the chat")
                     .WithMetadata("Code", ErrorCode.Forbidden));
@@ -59,6 +67,7 @@ namespace MessageAppBackend.Services
             
             return Result.Ok();
         }
+
         public async Task<Result> DeleteMessage(Guid id)
         {
             var message = await _dbContext.Messages.FirstOrDefaultAsync(m => m.Id == id)!;
@@ -68,24 +77,49 @@ namespace MessageAppBackend.Services
                     .WithMetadata("Code", ErrorCode.NotFound));
             }
 
+            var getUserIdResult = _currentUserService.GetUserId();
+            if (getUserIdResult.IsFailed)
+            {
+                return Result.Fail(getUserIdResult.Errors.First());
+            }
+            var senderId = getUserIdResult.Value;
+
+            if (message.SenderId != senderId && 
+                !await _dbContext.UserChats
+                .AnyAsync(uc => uc.UserId == message.SenderId && 
+                uc.ChatId == message.ChatId && 
+                uc.Role == UserChatRole.Admin))
+            {
+                return Result.Fail(new Error("Unable to delete message, user is not the sender or chat admin")
+                    .WithMetadata("Code", ErrorCode.Forbidden));
+            }
+
             _dbContext.Messages.Remove(message);
             
             await _dbContext.SaveChangesAsync();
             return Result.Ok();
         }
-        public async Task<Result> UpdateMessage(UpdateMessageDto updateMessageDto)
-        { 
-            if(!await _dbContext.Messages.AnyAsync(m => m.Id == updateMessageDto.Id && m.SenderId == updateMessageDto.SenderId))
-            {
-                return Result.Fail(new Error("Unable to update message, user is not the sender")
-                    .WithMetadata("Code", ErrorCode.Forbidden));
-            }
 
+        public async Task<Result> UpdateMessage(UpdateMessageDto updateMessageDto)
+        {
             var message = await _dbContext.Messages.FirstOrDefaultAsync(m => m.Id == updateMessageDto.Id)!;
             if (message is null)
             {
                 return Result.Fail(new Error("Message to update not found")
                     .WithMetadata("Code", ErrorCode.NotFound));
+            }
+
+            var getUserIdResult = _currentUserService.GetUserId();
+            if (getUserIdResult.IsFailed)
+            {
+                return Result.Fail(getUserIdResult.Errors.First());
+            }
+            var senderId = getUserIdResult.Value;
+
+            if (message.SenderId != senderId)
+            {
+                return Result.Fail(new Error("Unable to update message, user is not the sender")
+                    .WithMetadata("Code", ErrorCode.Forbidden));
             }
 
             message.Content = updateMessageDto.Content;

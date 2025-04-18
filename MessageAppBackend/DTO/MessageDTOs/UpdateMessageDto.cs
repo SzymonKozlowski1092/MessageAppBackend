@@ -9,8 +9,5 @@ namespace MessageAppBackend.DTO.MessageDTOs
 
         [Required(ErrorMessage = "Id is required")]
         public Guid Id { get; set; }
-        
-        [Required(ErrorMessage = "SenderId is required")]
-        public Guid SenderId { get; set; }
     }
 }
