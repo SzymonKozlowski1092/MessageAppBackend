@@ -20,9 +20,10 @@ namespace MessageAppBackend.Common
                 opt => opt.MapFrom(src => src.Sender != null ? src.Sender.DisplayName : string.Empty));
 
             CreateMap<Chat, ChatDto>()
-                .ForMember(dest => dest.Users, opt => 
-                opt.MapFrom(src => src.Users != null ? 
-                src.Users.Select(uc => uc.User).Where(u => u != null) : new List<User>()));
+                .ForMember(dest => dest.Users, opt => opt
+                .MapFrom(src => src.Users != null ? src.Users.Select(uc => uc.User).Where(u => u != null) : new List<User>()))
+                .ForMember(dest => dest.Messages, opt => opt
+                .MapFrom(src => src.Messages != null ? src.Messages.Where(m => m != null) : new List<Message>()));
 
             CreateMap<ChatInvitation, ChatInvitationDto>()
                 .ForMember(dest => dest.ChatName, opt => opt.MapFrom(src => src.Chat.Name))

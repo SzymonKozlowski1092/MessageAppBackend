@@ -1,5 +1,4 @@
 ﻿using MessageAppBackend.Common.Helpers;
-using MessageAppBackend.DbModels;
 using MessageAppBackend.DTO.MessageDTOs;
 using MessageAppBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -7,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MessageAppBackend.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
     [Authorize]
     public class MessageController : ControllerBase

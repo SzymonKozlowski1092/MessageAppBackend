@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MessageAppBackend.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
     [Authorize]
     public class UserController : ControllerBase

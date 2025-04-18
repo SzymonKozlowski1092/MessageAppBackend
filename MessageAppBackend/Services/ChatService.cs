@@ -3,9 +3,7 @@ using FluentResults;
 using MessageAppBackend.Common.Enums;
 using MessageAppBackend.Database;
 using MessageAppBackend.DbModels;
-using MessageAppBackend.DTO.MessageDTOs;
 using MessageAppBackend.DTO.ChatDTOs;
-using MessageAppBackend.DTO.UserDTOs;
 using MessageAppBackend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,44 +13,42 @@ namespace MessageAppBackend.Services
     {
         private readonly MessageAppDbContext _dbContext;
         private readonly IMapper _mapper;
-        public ChatService(MessageAppDbContext dbContext, IMapper mapper) 
+        private readonly ICurrentUserService _currentUserService;
+        public ChatService(MessageAppDbContext dbContext, IMapper mapper, ICurrentUserService currentUserService) 
         {
             _dbContext = dbContext;
             _mapper = mapper;
+            _currentUserService = currentUserService;
         }
-
-        public async Task<Result<List<MessageDto>>> GetMessages(Guid chatId)
+        
+        public async Task<Result<ChatDto>> GetChat(Guid chatId)
         {
-            var messages = await _dbContext.Messages
-                .Include(m => m.Sender)
-                .Where(m => m.ChatId == chatId)
-                .ToListAsync();
+            var chat = await _dbContext.Chats
+                .Include(c => c.Users)!
+                .ThenInclude(uc => uc.User)
+                .Include(c => c.Messages)
+                .FirstOrDefaultAsync(c => c.Id == chatId && !c.IsDeleted);
 
-            if (messages is null || !messages.Any())
+            var getUserIdResult = _currentUserService.GetUserId();
+            if (getUserIdResult.IsFailed)
             {
-                return Result.Fail(new Error($"No messages found in chat with id: {chatId}.")
+                return Result.Fail(getUserIdResult.Errors.First());
+            }
+            var userId = getUserIdResult.Value;
+
+            if (chat is null)
+            {
+                return Result.Fail(new Error($"Chat with id {chatId} was not found")
                     .WithMetadata("Code", ErrorCode.NotFound));
             }
-
-            var messagesDto = _mapper.Map<List<MessageDto>>(messages);
-            return Result.Ok(messagesDto);
-        }
-
-        public async Task<Result<List<UserDto>>> GetUsers(Guid chatId)
-        {
-            var users = await _dbContext.UserChats
-                .Where(uc => uc.ChatId == chatId)
-                .Select(uc => uc.User)
-                .ToListAsync();
-
-            if (users is null || !users.Any())
+            if(!chat.Users!.Any(uc => uc.UserId == userId))
             {
-                return Result.Fail(new Error($"No users found in chat with id: {chatId}.")
-                    .WithMetadata("Code", ErrorCode.NotFound));
+                return Result.Fail(new Error($"User with id {getUserIdResult} is not a member of chat with id {chatId}")
+                    .WithMetadata("Code", ErrorCode.Forbidden));
             }
+            var chatDto = _mapper.Map<ChatDto>(chat);
 
-            var usersDto = _mapper.Map<List<UserDto>>(users);
-            return Result.Ok(usersDto)!;
+            return Result.Ok(chatDto);
         }
 
         public async Task<Result> CreateNewChat(CreateChatDto createChatDto)
@@ -73,7 +69,8 @@ namespace MessageAppBackend.Services
             var userChat = new UserChat
             {
                 UserId = createChatDto.UserId,
-                ChatId = chat.Id
+                ChatId = chat.Id,
+                Role = UserChatRole.Admin,
             };
 
             chat.Users.Add(userChat);
@@ -83,24 +80,35 @@ namespace MessageAppBackend.Services
             return Result.Ok();
         }
 
-        public async Task<Result> DeleteChat(DeleteChatDto deleteChatDto)
+        public async Task<Result> DeleteChat(Guid chatId)
         {
             var chat = await _dbContext.Chats
                 .Include(c => c.Users)
-                .FirstOrDefaultAsync(c => c.Id == deleteChatDto.ChatId && !c.IsDeleted);
+                .FirstOrDefaultAsync(c => c.Id == chatId && !c.IsDeleted);
+
+            var getUserIdResult = _currentUserService.GetUserId();
+            if (getUserIdResult.IsFailed)
+            {
+                return Result.Fail(getUserIdResult.Errors.First());
+            }
+            var userId = getUserIdResult.Value;
+
             if (chat is null)
             {
-                return Result.Fail(new Error($"Chat with id {deleteChatDto.ChatId} was not found")
+                return Result.Fail(new Error($"Chat with id {chatId} was not found")
                     .WithMetadata("Code", ErrorCode.NotFound));
             }
-            if (!await _dbContext.UserChats.AnyAsync(uc => uc.ChatId == deleteChatDto.ChatId && uc.UserId == deleteChatDto.UserId))
+            if (!await _dbContext.UserChats.AnyAsync(uc => uc.ChatId == chatId && uc.UserId == userId))
             {
-                return Result.Fail(new Error($"User: {deleteChatDto.UserId} is not a chat: {deleteChatDto.ChatId} member")
+                return Result.Fail(new Error($"User: {userId} is not a chat: {chatId} member")
                     .WithMetadata("Code", ErrorCode.Forbidden));
             }
-           
-            //TODO: ADD A USER ROLE IN THE UserChat ENTITY AND CHECK THERE IF THE USER IS THE ADMIN OF THE CHAT
-            
+            if(!await _dbContext.UserChats.AnyAsync(uc => uc.ChatId == chatId && uc.UserId == userId && uc.Role == UserChatRole.Admin))
+            {
+                return Result.Fail(new Error($"User with id: {userId} does not have permission to delete chat with id: {chatId}")
+                    .WithMetadata("Code", ErrorCode.Forbidden));
+            }
+
             chat.IsDeleted = true;
             chat.DeletedAt = DateTime.UtcNow;
             

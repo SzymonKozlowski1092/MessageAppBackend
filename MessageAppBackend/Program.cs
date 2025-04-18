@@ -35,6 +35,8 @@ builder.Services.AddDbContext<MessageAppDbContext>(options =>
         )
     )
 );
+
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ErrorHandlingMiddleware>();
 builder.Services.AddScoped<MessageAppDbContext>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
@@ -44,6 +46,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IChatInvitationService, ChatInvitationService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 builder.Services.AddAuthentication(options =>
@@ -78,7 +81,7 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Autoryzacja JWT wykorzystuj¹ca schemat Bearer. WprowadŸ 'Bearer' [spacja] a nastêpnie swój token w polu poni¿ej.\n\n Przyk³ad: 'Bearer 12345abcdef'",
+        Description = "Enter token below",
         Name = "Authorization",
         In = ParameterLocation.Header, 
         Type = SecuritySchemeType.Http, 

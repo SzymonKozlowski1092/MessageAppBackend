@@ -7,9 +7,8 @@ namespace MessageAppBackend.Services.Interfaces
 {
     public interface IChatService
     {
-        public Task<Result<List<MessageDto>>> GetMessages(Guid chatId);
-        public Task<Result<List<UserDto>>> GetUsers(Guid chatId);
+        public Task<Result<ChatDto>> GetChat(Guid chatId);
         public Task<Result> CreateNewChat(CreateChatDto createChatDto);
-        public Task<Result> DeleteChat(DeleteChatDto deleteChatDto);
+        public Task<Result> DeleteChat(Guid chatId);
     }
 }

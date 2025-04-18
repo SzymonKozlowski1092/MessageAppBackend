@@ -1,5 +1,7 @@
-﻿using Microsoft.VisualBasic;
+﻿using MessageAppBackend.Common.Enums;
+using Microsoft.VisualBasic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.Contracts;
 
 namespace MessageAppBackend.DbModels
 {
@@ -8,9 +10,7 @@ namespace MessageAppBackend.DbModels
         [ForeignKey("UserId")]
         public Guid UserId { get; set; }
         public User? User { get; set; }
-       
-        //TODO: ADD A USER ROLE IN THE CHAT
-        
+        public UserChatRole Role { get; set; } = UserChatRole.Member;
         [ForeignKey("ChatId")]
         public Guid ChatId { get; set; }
         public Chat? Chat { get; set; }

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MessageAppBackend.Controllers
 {
-    [Route("MessageApp/api/[controller]")]
+    [Route("MessageApp/[controller]")]
     [ApiController]
     public class AccountController : ControllerBase
     {

@@ -1,4 +1,5 @@
-﻿using MessageAppBackend.Common.Helpers;
+﻿using System.Security.Claims;
+using MessageAppBackend.Common.Helpers;
 using MessageAppBackend.DbModels;
 using MessageAppBackend.DTO.ChatDTOs;
 using MessageAppBackend.DTO.MessageDTOs;
@@ -9,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MessageAppBackend.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
     [Authorize]
     public class ChatController : ControllerBase
@@ -20,10 +21,10 @@ namespace MessageAppBackend.Controllers
             _chatService = chatService;
         }
 
-        [HttpGet("Messages/{chatId}")]
-        public async Task<ActionResult<List<MessageDto>>> GetMessages([FromRoute]Guid chatId)
+        [HttpGet("{chatId}")]
+        public async Task<ActionResult<List<ChatDto>>> GetChat(Guid chatId)
         {
-            var result = await _chatService.GetMessages(chatId);
+            var result = await _chatService.GetChat(chatId);
             if (result.IsFailed)
             {
                 return ErrorMapper.MapErrorToResponse(result.Errors.First());
@@ -31,19 +32,8 @@ namespace MessageAppBackend.Controllers
             return Ok(result.Value);
         }
 
-        [HttpGet("users/{chatId}")]
-        public async Task<ActionResult<List<UserDto>>> GetUsers([FromRoute]Guid chatId)
-        {
-            var result = await _chatService.GetUsers(chatId);
-            if (result.IsFailed)
-            {
-                return ErrorMapper.MapErrorToResponse(result.Errors.First());
-            }
-            return Ok(result.Value);
-        }
-
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateNewChat([FromBody]CreateChatDto createChatDto)
+        [HttpPost]
+        public async Task<IActionResult> CreateNewChat([FromBody] CreateChatDto createChatDto)
         {
             var result = await _chatService.CreateNewChat(createChatDto);
             if (result.IsFailed)
@@ -52,6 +42,17 @@ namespace MessageAppBackend.Controllers
             }
 
             return Created();
+        }
+
+        [HttpDelete("{chatId}")]
+        public async Task<IActionResult> DeleteChat([FromRoute]Guid chatId)
+        {
+            var result = await _chatService.DeleteChat(chatId);
+            if (result.IsFailed)
+            {
+                return ErrorMapper.MapErrorToResponse(result.Errors.First());
+            }
+            return NoContent();
         }
     }
 }
