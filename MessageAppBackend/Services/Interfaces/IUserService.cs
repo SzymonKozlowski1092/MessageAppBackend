@@ -6,7 +6,7 @@ namespace MessageAppBackend.Services.Interfaces
 {
     public interface IUserService
     {
-        public Task<Result<List<ChatDto>>> GetChats(Guid userId);
-        public Task<Result> LeaveChat(LeaveChatDto leaveChatDto);
+        public Task<Result<List<ChatDto>>> GetChats();
+        public Task<Result> LeaveChat(Guid chatId);
     }
 }

@@ -13,15 +13,24 @@ namespace MessageAppBackend.Services
     {
         private readonly IMapper _mapper;
         private readonly MessageAppDbContext _dbContext;
-        public ChatInvitationService(MessageAppDbContext dbContext, IMapper mapper)
+        private readonly ICurrentUserService _currentUserService;
+        public ChatInvitationService(MessageAppDbContext dbContext, IMapper mapper, ICurrentUserService currentUserService)
         {
             _dbContext = dbContext;
             _mapper = mapper;
+            _currentUserService = currentUserService;
         }
 
-        public async Task<Result> AcceptInvitation(UpdateInvitationStatusDto updateInvitationStatusDto)
+        public async Task<Result> AcceptInvitation(Guid chatId)
         {
-            var invitationResult = await GetInvitation(updateInvitationStatusDto.ChatId, updateInvitationStatusDto.InvitedUserId);
+            var getInvitedUserIdResult = _currentUserService.GetUserId();
+            if (getInvitedUserIdResult.IsFailed)
+            {
+                return Result.Fail(getInvitedUserIdResult.Errors.First());
+            }
+            var invitedUserId = getInvitedUserIdResult.Value;
+
+            var invitationResult = await GetInvitation(chatId, invitedUserId);
             if (invitationResult.IsFailed)
             {
                 return invitationResult.ToResult();
@@ -29,16 +38,16 @@ namespace MessageAppBackend.Services
             
             var userChat = new UserChat
             {
-                ChatId = updateInvitationStatusDto.ChatId,
-                UserId = updateInvitationStatusDto.InvitedUserId
+                ChatId = chatId,
+                UserId = invitedUserId
             };
             
             var chat = await _dbContext.Chats
                 .Include(c => c.Users)
-                .FirstOrDefaultAsync(c => c.Id == updateInvitationStatusDto.ChatId);
+                .FirstOrDefaultAsync(c => c.Id == chatId);
             if(chat is null)
             {
-                return Result.Fail(new Error($"Error with joining user: {updateInvitationStatusDto.InvitedUserId} to chat: {updateInvitationStatusDto.ChatId}. Chat not found")
+                return Result.Fail(new Error($"Error with joining user: {invitedUserId} to chat: {chatId}. Chat not found")
                     .WithMetadata("Code", ErrorCode.NotFound));
             }
             
@@ -48,9 +57,16 @@ namespace MessageAppBackend.Services
 
             return Result.Ok();
         }
-        public async Task<Result> DeclineInvitation(UpdateInvitationStatusDto updateInvitationStatusDto)
+        public async Task<Result> DeclineInvitation(Guid chatId)
         {
-            var invitationResult = await GetInvitation(updateInvitationStatusDto.ChatId, updateInvitationStatusDto.InvitedUserId);
+            var getInvitedUserIdResult = _currentUserService.GetUserId();
+            if (getInvitedUserIdResult.IsFailed)
+            {
+                return Result.Fail(getInvitedUserIdResult.Errors.First());
+            }
+            var invitedUserId = getInvitedUserIdResult.Value;
+
+            var invitationResult = await GetInvitation(chatId, invitedUserId);
             if (invitationResult.IsFailed)
             {
                 return invitationResult.ToResult();
@@ -62,8 +78,15 @@ namespace MessageAppBackend.Services
 
             return Result.Ok();
         }
-        public async Task<Result<List<ChatInvitationDto>>> GetUserActiveInvitations(Guid userId)
+        public async Task<Result<List<ChatInvitationDto>>> GetUserActiveInvitations()
         {
+            var getUserIdResult = _currentUserService.GetUserId();
+            if (getUserIdResult.IsFailed)
+            {
+                return Result.Fail(getUserIdResult.Errors.First());
+            }
+            var userId = getUserIdResult.Value;
+
             var invitations = await _dbContext.ChatInvitations
                 .Include(ci => ci.Chat)
                 .Include(ci => ci.InvitedByUser)
@@ -81,6 +104,13 @@ namespace MessageAppBackend.Services
         }
         public async Task<Result> SendChatInvitation(SendInvitationDto sendInvitationDto)
         {
+            var getInvitedByUserIdResult = _currentUserService.GetUserId();
+            if (getInvitedByUserIdResult.IsFailed)
+            {
+                return Result.Fail(getInvitedByUserIdResult.Errors.First());
+            }
+            var invitedByUserId = getInvitedByUserIdResult.Value;
+
             var chat = await _dbContext.Chats
                 .Include(c => c.Users)
                 .FirstOrDefaultAsync(c => c.Id == sendInvitationDto.ChatId && !c.IsDeleted);
@@ -103,7 +133,7 @@ namespace MessageAppBackend.Services
                     .WithMetadata("Code", ErrorCode.AlreadyExists));
             }
 
-            var invitedByUserResult = await GetUser(sendInvitationDto.InvitedByUserId, $"Invitation sender with id: {sendInvitationDto.InvitedByUserId} not found");
+            var invitedByUserResult = await GetUser(invitedByUserId, $"Invitation sender with id: {invitedByUserId} not found");
             if (invitedByUserResult.IsFailed)
             {
                 return invitedByUserResult.ToResult();
@@ -113,7 +143,7 @@ namespace MessageAppBackend.Services
             if (await _dbContext.ChatInvitations.AnyAsync(ci =>
                 ci.ChatId == sendInvitationDto.ChatId &&
                 ci.InvitedUserId == sendInvitationDto.InvitedUserId &&
-                ci.InvitedByUserId == sendInvitationDto.InvitedByUserId &&
+                ci.InvitedByUserId == invitedByUserId &&
                 ci.Status == InvitationStatus.Pending))
             {
                 return Result.Fail(new Error("This invitation already exists")
@@ -124,7 +154,7 @@ namespace MessageAppBackend.Services
             {
                 ChatId = sendInvitationDto.ChatId,
                 InvitedUserId = sendInvitationDto.InvitedUserId,
-                InvitedByUserId = sendInvitationDto.InvitedByUserId,
+                InvitedByUserId = invitedByUserId,
                 SentAt = DateTime.UtcNow,
                 Status = InvitationStatus.Pending
             };
