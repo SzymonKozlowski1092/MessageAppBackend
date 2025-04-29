@@ -45,7 +45,7 @@ namespace MessageAppBackend.Services
             bool chatExists = await _dbContext.Chats.AnyAsync(c => c.Id == newMessageDto.ChatId && !c.IsDeleted);
             if (!chatExists)
             {
-                return Result.Fail(new Error("Unable to add message, chat or user not found")
+                return Result.Fail(new Error("Unable to add message, chat not found")
                     .WithMetadata("Code", ErrorCode.NotFound));
             }
 
@@ -56,6 +56,7 @@ namespace MessageAppBackend.Services
             }
             
             var newMessage = _mapper.Map<Message>(newMessageDto);
+            newMessage.SenderId = senderId;
             if (newMessage is null)
             {
                 return Result.Fail(new Error("Error with creating new message")

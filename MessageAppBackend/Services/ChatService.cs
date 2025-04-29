@@ -4,6 +4,7 @@ using MessageAppBackend.Common.Enums;
 using MessageAppBackend.Database;
 using MessageAppBackend.DbModels;
 using MessageAppBackend.DTO.ChatDTOs;
+using MessageAppBackend.DTO.MessageDTOs;
 using MessageAppBackend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -49,6 +50,29 @@ namespace MessageAppBackend.Services
             var chatDto = _mapper.Map<ChatDto>(chat);
 
             return Result.Ok(chatDto);
+        }
+
+        public async Task<Result<List<MessageDto>>> GetChatMessages(Guid chatId)
+        {
+            var getCurrentUserIdResult = _currentUserService.GetUserId();
+            if (getCurrentUserIdResult.IsFailed)
+            {
+                return Result.Fail(getCurrentUserIdResult.Errors.First());
+            }
+            var userId = getCurrentUserIdResult.Value;
+
+            if (_dbContext.UserChats.Any(uc => uc.ChatId == chatId && uc.UserId == userId))
+            {
+                return Result.Fail(new Error($"User with id {userId} is not a member of chat with id {chatId}")
+                    .WithMetadata("Code", ErrorCode.Forbidden));
+            }
+
+            var messages = await _dbContext.Messages
+                .Where(m => m.ChatId == chatId)
+                .ToListAsync();
+
+            var messageDtos = _mapper.Map<List<MessageDto>>(messages);
+            return Result.Ok(messageDtos);
         }
 
         public async Task<Result> CreateNewChat(CreateChatDto createChatDto)

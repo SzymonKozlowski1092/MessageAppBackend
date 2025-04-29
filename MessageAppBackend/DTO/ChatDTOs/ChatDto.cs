@@ -9,7 +9,6 @@ namespace MessageAppBackend.DTO.ChatDTOs
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
         public List<UserDto> Users { get; set; } = new();
         public List<MessageDto> Messages { get; set; } = new();
     }

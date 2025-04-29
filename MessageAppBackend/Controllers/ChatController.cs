@@ -32,6 +32,17 @@ namespace MessageAppBackend.Controllers
             return Ok(result.Value);
         }
 
+        [HttpGet("{chatId}/Messages")]
+        public async Task<ActionResult<List<MessageDto>>> GetChatMessages(Guid chatId)
+        {
+            var result = await _chatService.GetChatMessages(chatId);
+            if (result.IsFailed)
+            {
+                return ErrorMapper.MapErrorToResponse(result.Errors.First());
+            }
+            return Ok(result.Value);
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateNewChat([FromBody] CreateChatDto createChatDto)
         {

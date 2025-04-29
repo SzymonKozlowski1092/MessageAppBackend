@@ -16,10 +16,10 @@ namespace MessageAppBackend.Controllers
             _chatInvitationService = chatInvitationService;
         }
 
-        [HttpGet("user/{userId}")]
-        public async Task<ActionResult<List<ChatInvitationDto>>> GetUserActiveInvitations([FromRoute]Guid userId)
+        [HttpGet]
+        public async Task<ActionResult<List<ChatInvitationDto>>> GetUserActiveInvitations()
         {
-            var result = await _chatInvitationService.GetUserActiveInvitations(userId);
+            var result = await _chatInvitationService.GetUserActiveInvitations();
             if (result.IsFailed)
             {
                 return ErrorMapper.MapErrorToResponse(result.Errors.First());
@@ -44,11 +44,11 @@ namespace MessageAppBackend.Controllers
             return Created();
         }
 
-        [HttpPut("AcceptInvitation")]
-        public async Task<IActionResult> AcceptInvitation([FromBody]UpdateInvitationStatusDto updateInvitationStatusDto)
+        [HttpPut("AcceptInvitation/{chatId}")]
+        public async Task<IActionResult> AcceptInvitation(Guid chatId)
         {
             var result = await _chatInvitationService
-                .AcceptInvitation(updateInvitationStatusDto);
+                .AcceptInvitation(chatId);
             if (result.IsFailed)
             {
                 return ErrorMapper.MapErrorToResponse(result.Errors.First());
@@ -56,11 +56,11 @@ namespace MessageAppBackend.Controllers
 
             return NoContent();
         }
-        [HttpPut("DeclineInvitation")]
-        public async Task<IActionResult> DeclineInvitation([FromBody] UpdateInvitationStatusDto updateInvitationStatusDto)
+        [HttpPut("DeclineInvitation/{chatId}")]
+        public async Task<IActionResult> DeclineInvitation(Guid chatId)
         {
             var result = await _chatInvitationService
-                .DeclineInvitation(updateInvitationStatusDto);
+                .DeclineInvitation(chatId);
             if (result.IsFailed)
             {
                 return ErrorMapper.MapErrorToResponse(result.Errors.First());
