@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Primitives;
-
-namespace MessageAppBackend.DTO.ChatDTOs
+﻿namespace MessageAppBackend.DTO.ChatDTOs
 {
     public class SimpleChatDto
     {
