@@ -31,7 +31,10 @@ namespace MessageAppBackend.Common
                     ? src.Messages.OrderByDescending(m => m.SentAt).First().Content : string.Empty))
                 .ForMember(dest => dest.LastMessageSenderDisplayName, opt => opt.MapFrom(src =>
                 src.Messages != null && src.Messages.Any() && src.Messages.OrderByDescending(m => m.SentAt).First().Sender != null
-                    ? src.Messages.OrderByDescending(m => m.SentAt).First().Sender!.DisplayName : string.Empty));
+                    ? src.Messages.OrderByDescending(m => m.SentAt).First().Sender!.DisplayName : string.Empty))
+                .ForMember(dest => dest.LastMessageSentTime, opt => opt.MapFrom(src => 
+                src.Messages != null && src.Messages.Any() 
+                ? src.Messages.OrderByDescending(m => m.SentAt).First().SentAt : default));
 
             CreateMap<ChatInvitation, ChatInvitationDto>()
                 .ForMember(dest => dest.ChatName, opt => opt.MapFrom(src => src.Chat.Name))

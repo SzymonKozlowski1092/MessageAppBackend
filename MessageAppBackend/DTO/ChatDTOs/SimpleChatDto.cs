@@ -6,5 +6,6 @@
         public string Name { get; set; } = string.Empty;
         public string LastMessageContent { get; set; } = string.Empty;
         public string LastMessageSenderDisplayName { get; set; } = string.Empty;
+        public DateTime LastMessageSentTime { get; set; }
     }
 }
