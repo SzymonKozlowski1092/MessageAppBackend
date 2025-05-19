@@ -2,18 +2,31 @@
 using MessageAppBackend.Common.Helpers;
 using MessageAppBackend.DTO.ChatInvitationDTOs;
 using MessageAppBackend.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MessageAppBackend.Controllers
 {
     [Route("[controller]")]
     [ApiController]
+    [Authorize]
     public class ChatInvitationController : ControllerBase
     {
         private readonly IChatInvitationService _chatInvitationService;
         public ChatInvitationController(IChatInvitationService chatInvitationService)
         {
             _chatInvitationService = chatInvitationService;
+        }
+
+        [HttpGet("{invitationId}")]
+        public async Task<ActionResult<ChatInvitationDto>> GetChatInvitation(Guid invitationId)
+        {
+            var result = await _chatInvitationService.GetChatInvitation(invitationId);
+            if (result.IsFailed)
+            {
+                return ErrorMapper.MapErrorToResponse(result.Errors.First());
+            }
+            return Ok(result.Value);
         }
 
         [HttpGet]

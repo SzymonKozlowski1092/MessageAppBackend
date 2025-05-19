@@ -21,7 +21,23 @@ namespace MessageAppBackend.Services
             _currentUserService = currentUserService;
         }
 
-        public async Task<Result> AcceptInvitation(Guid chatId)
+        public async Task<Result<ChatInvitationDto>> GetChatInvitation(Guid invitationId)
+        {
+            var invitation = await _dbContext.ChatInvitations
+                .Include(ci => ci.Chat)
+                .Include(ci => ci.InvitedByUser)
+                .FirstOrDefaultAsync(i => i.Id == invitationId);
+
+            if (invitation is null)
+            {
+                return Result.Fail(new Error($"Invitation with id: {invitationId} not found")
+                    .WithMetadata("Code", ErrorCode.NotFound));
+            }
+
+            var invitationDto = _mapper.Map<ChatInvitationDto>(invitation);
+            return Result.Ok(invitationDto);
+        }
+        public async Task<Result> AcceptInvitation(Guid invitationId)
         {
             var getInvitedUserIdResult = _currentUserService.GetUserId();
             if (getInvitedUserIdResult.IsFailed)
@@ -30,34 +46,35 @@ namespace MessageAppBackend.Services
             }
             var invitedUserId = getInvitedUserIdResult.Value;
 
-            var invitationResult = await GetInvitation(chatId, invitedUserId);
+            var invitationResult = await GetInvitation(invitationId, invitedUserId);
             if (invitationResult.IsFailed)
             {
                 return invitationResult.ToResult();
             }
-            
+            var invitation = invitationResult.Value;
+
             var userChat = new UserChat
             {
-                ChatId = chatId,
+                ChatId = invitationId,
                 UserId = invitedUserId
             };
             
             var chat = await _dbContext.Chats
                 .Include(c => c.Users)
-                .FirstOrDefaultAsync(c => c.Id == chatId);
+                .FirstOrDefaultAsync(c => c.Id == invitation.ChatId);
             if(chat is null)
             {
-                return Result.Fail(new Error($"Error with joining user: {invitedUserId} to chat: {chatId}. Chat not found")
+                return Result.Fail(new Error($"Error with joining user: {invitedUserId} to chat: {invitationId}. Chat not found")
                     .WithMetadata("Code", ErrorCode.NotFound));
             }
             
             chat.Users!.Add(userChat);
-            invitationResult.Value.Status = InvitationStatus.Accepted;
+            invitation.Status = InvitationStatus.Accepted;
             await _dbContext.SaveChangesAsync();
 
             return Result.Ok();
-        }
-        public async Task<Result> DeclineInvitation(Guid chatId)
+        }        
+        public async Task<Result> DeclineInvitation(Guid invitationId)
         {
             var getInvitedUserIdResult = _currentUserService.GetUserId();
             if (getInvitedUserIdResult.IsFailed)
@@ -66,7 +83,7 @@ namespace MessageAppBackend.Services
             }
             var invitedUserId = getInvitedUserIdResult.Value;
 
-            var invitationResult = await GetInvitation(chatId, invitedUserId);
+            var invitationResult = await GetInvitation(invitationId, invitedUserId);
             if (invitationResult.IsFailed)
             {
                 return invitationResult.ToResult();
@@ -77,7 +94,7 @@ namespace MessageAppBackend.Services
             await _dbContext.SaveChangesAsync();
 
             return Result.Ok();
-        }
+        }        
         public async Task<Result<List<ChatInvitationDto>>> GetUserActiveInvitations()
         {
             var getUserIdResult = _currentUserService.GetUserId();
@@ -101,7 +118,7 @@ namespace MessageAppBackend.Services
 
             var invitationsDto = _mapper.Map<List<ChatInvitationDto>>(invitations);
             return Result.Ok(invitationsDto);
-        }
+        }        
         public async Task<Result> SendChatInvitation(SendInvitationDto sendInvitationDto)
         {
             var getInvitedByUserIdResult = _currentUserService.GetUserId();
@@ -110,35 +127,6 @@ namespace MessageAppBackend.Services
                 return Result.Fail(getInvitedByUserIdResult.Errors.First());
             }
             var invitedByUserId = getInvitedByUserIdResult.Value;
-
-            var chat = await _dbContext.Chats
-                .Include(c => c.Users)
-                .FirstOrDefaultAsync(c => c.Id == sendInvitationDto.ChatId && !c.IsDeleted);
-            if (chat is null)
-            {
-                return Result.Fail(new Error($"Chat with id: {sendInvitationDto.ChatId} not found")
-                    .WithMetadata("Code", ErrorCode.NotFound));
-            }
-
-            var invitedUserResult = await GetUser(sendInvitationDto.InvitedUserId, $"Invited user with id {sendInvitationDto.InvitedUserId} not found");
-            if (invitedUserResult.IsFailed)
-            {
-                return invitedUserResult.ToResult();
-            }
-            var invitedUser = invitedUserResult.Value;
-
-            if (chat.Users!.Any(u => u.UserId == sendInvitationDto.InvitedUserId))
-            {
-                return Result.Fail(new Error($"User with id: {sendInvitationDto.InvitedUserId} already exists in chat with id {sendInvitationDto.ChatId}")
-                    .WithMetadata("Code", ErrorCode.AlreadyExists));
-            }
-
-            var invitedByUserResult = await GetUser(invitedByUserId, $"Invitation sender with id: {invitedByUserId} not found");
-            if (invitedByUserResult.IsFailed)
-            {
-                return invitedByUserResult.ToResult();
-            }
-            var invitedByUser = invitedByUserResult.Value;
 
             if (await _dbContext.ChatInvitations.AnyAsync(ci =>
                 ci.ChatId == sendInvitationDto.ChatId &&
@@ -149,6 +137,35 @@ namespace MessageAppBackend.Services
                 return Result.Fail(new Error("This invitation already exists")
                     .WithMetadata("Code", ErrorCode.AlreadyExists));
             }
+
+            var chat = await _dbContext.Chats
+                .Include(c => c.Users)
+                .FirstOrDefaultAsync(c => c.Id == sendInvitationDto.ChatId && !c.IsDeleted);
+            if (chat is null)
+            {
+                return Result.Fail(new Error($"Chat with id: {sendInvitationDto.ChatId} not found")
+                    .WithMetadata("Code", ErrorCode.NotFound));
+            }
+
+            if (chat.Users!.Any(u => u.UserId == sendInvitationDto.InvitedUserId))
+            {
+                return Result.Fail(new Error($"User with id: {sendInvitationDto.InvitedUserId} already exists in chat with id {sendInvitationDto.ChatId}")
+                    .WithMetadata("Code", ErrorCode.AlreadyExists));
+            }
+
+            var invitedUserResult = await GetUser(sendInvitationDto.InvitedUserId, $"Invited user with id {sendInvitationDto.InvitedUserId} not found");
+            if (invitedUserResult.IsFailed)
+            {
+                return invitedUserResult.ToResult();
+            }
+            var invitedUser = invitedUserResult.Value;
+
+            var invitedByUserResult = await GetUser(invitedByUserId, $"Invitation sender with id: {invitedByUserId} not found");
+            if (invitedByUserResult.IsFailed)
+            {
+                return invitedByUserResult.ToResult();
+            }
+            var invitedByUser = invitedByUserResult.Value;
 
             var chatInvitation = new ChatInvitation
             {
@@ -174,18 +191,19 @@ namespace MessageAppBackend.Services
                 Result.Fail(new Error(notFoundMessage).WithMetadata("Code", ErrorCode.NotFound)) :
                 Result.Ok(user);
         }
-        private async Task<Result<ChatInvitation>> GetInvitation(Guid chatId, Guid invitedUserId)
+        private async Task<Result<ChatInvitation>> GetInvitation(Guid invitationId, Guid invitedUserId)
         {
             var invitation = await _dbContext.ChatInvitations
                 .Include(ci => ci.Chat)
                 .FirstOrDefaultAsync(
-                ci => ci.ChatId == chatId &&
+                ci => ci.Id == invitationId &&
                 !ci.Chat.IsDeleted &&
                 ci.InvitedUserId == invitedUserId &&
                 ci.Status == InvitationStatus.Pending);
 
             return invitation is null ? 
-                Result.Fail(new Error($"Invitation does not exist for chat with id: {chatId} and user with id: {invitedUserId}").WithMetadata("Code", ErrorCode.NotFound)) : 
+                Result.Fail(new Error($"Invitation with id: {invitationId} does not exist for user with id: {invitedUserId}")
+                .WithMetadata("Code", ErrorCode.NotFound)) : 
                 Result.Ok(invitation);
         }
     }

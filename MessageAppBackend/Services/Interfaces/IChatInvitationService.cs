@@ -5,6 +5,7 @@ namespace MessageAppBackend.Services.Interfaces
 {
     public interface IChatInvitationService
     {
+        public Task<Result<ChatInvitationDto>> GetChatInvitation(Guid invitationId);
         public Task<Result<List<ChatInvitationDto>>> GetUserActiveInvitations();
         public Task<Result> SendChatInvitation(SendInvitationDto sendInvitationDto);
         public Task<Result> AcceptInvitation(Guid chatId);
