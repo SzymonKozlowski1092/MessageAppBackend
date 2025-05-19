@@ -21,6 +21,39 @@ namespace MessageAppBackend.Services
             _currentUserService = currentUserService;
         }
 
+        public async Task<Result<UserDto>> GetUser()
+        {
+            var getCurrentUserIdResult = _currentUserService.GetUserId();
+            if (getCurrentUserIdResult.IsFailed)
+            {
+                return Result.Fail(getCurrentUserIdResult.Errors.First());
+            }
+            var userId = getCurrentUserIdResult.Value;
+
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user is null)
+            {
+                return Result.Fail(new Error($"No user found with id: {userId}.")
+                    .WithMetadata("Code", ErrorCode.NotFound));
+            }
+
+            var userDto = _mapper.Map<UserDto>(user);
+            return Result.Ok(userDto);
+        }
+
+        public async Task<Result<UserDto>> GetUserByUsername(string username)
+        {
+            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if (user is null) 
+            {
+                return Result.Fail(new Error($"User with the username: {username} not found")
+                    .WithMetadata("Code", ErrorCode.NotFound));
+            }
+
+            var userDto = _mapper.Map<UserDto>(user);
+            return Result.Ok(userDto);
+        }
+
         public async Task<Result<List<ChatDto>>> GetChats()
         {
             var getUserIdResult = _currentUserService.GetUserId();
@@ -69,26 +102,6 @@ namespace MessageAppBackend.Services
 
             var simpleChatsDto = _mapper.Map<List<SimpleChatDto>>(chats);
             return Result.Ok(simpleChatsDto);
-        }
-
-        public async Task<Result<UserDto>> GetUser()
-        {
-            var getCurrentUserIdResult = _currentUserService.GetUserId();
-            if(getCurrentUserIdResult.IsFailed)
-            {
-                return Result.Fail(getCurrentUserIdResult.Errors.First());
-            }
-            var userId = getCurrentUserIdResult.Value;
-
-            var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
-            if (user is null)
-            {
-                return Result.Fail(new Error($"No user found with id: {userId}.")
-                    .WithMetadata("Code", ErrorCode.NotFound));
-            }
-
-            var userDto = _mapper.Map<UserDto>(user);
-            return Result.Ok(userDto);
         }
 
         public async Task<Result> LeaveChat(Guid chatId)

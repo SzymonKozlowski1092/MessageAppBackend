@@ -4,6 +4,7 @@ using MessageAppBackend.DTO.UserDTOs;
 using MessageAppBackend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity.Client;
 
 namespace MessageAppBackend.Controllers
 {
@@ -26,6 +27,18 @@ namespace MessageAppBackend.Controllers
             {
                 return ErrorMapper.MapErrorToResponse(result.Errors.First());
             }
+            return Ok(result.Value);
+        }
+
+        [HttpGet("/{username}")]
+        public async Task<ActionResult<UserDto>> GetUserByUsername(string username)
+        {
+            var result = await _userService.GetUserByUsername(username);
+            if (result.IsFailed)
+            {
+                return ErrorMapper.MapErrorToResponse(result.Errors.First());
+            }
+
             return Ok(result.Value);
         }
 

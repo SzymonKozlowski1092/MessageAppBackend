@@ -38,9 +38,8 @@ namespace MessageAppBackend.Common
 
             CreateMap<ChatInvitation, ChatInvitationDto>()
                 .ForMember(dest => dest.ChatName, opt => opt.MapFrom(src => src.Chat.Name))
-                .ForMember(dest => dest.InvitedUsername, opt => opt.MapFrom(src => src.InvitedUser.Username))
                 .ForMember(dest => dest.InvitedByUsername, opt => opt.MapFrom(src => src.InvitedByUser.Username))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+                /*.ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))*/;
 
             //DTO TO ENTITY MAPPINGS
             CreateMap<MessageDto, Message>();
