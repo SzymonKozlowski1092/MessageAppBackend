@@ -83,17 +83,32 @@ namespace MessageAppBackend.Services
             {
                 return Result.Fail(getUserIdResult.Errors.First());
             }
-            var senderId = getUserIdResult.Value;
+            var userId = getUserIdResult.Value;
 
-            if (message.SenderId != senderId && 
-                !await _dbContext.UserChats
-                .AnyAsync(uc => uc.UserId == message.SenderId && 
-                uc.ChatId == message.ChatId && 
-                uc.Role == UserChatRole.Admin))
+            //Check if the user is the sender of the message
+            if(!(message.SenderId == userId))
             {
-                return Result.Fail(new Error("Unable to delete message, user is not the sender or chat admin")
+                //Check if the user is admin of the chat
+                if(!await _dbContext.UserChats.AnyAsync(uc => 
+                uc.UserId == userId &&
+                uc.ChatId == message.ChatId &&
+                uc.Role == UserChatRole.Admin))
+                {
+                    return Result.Fail(new Error("Unable to delete message, user is not the sender or chat admin")
                     .WithMetadata("Code", ErrorCode.Forbidden));
+                }
             }
+
+
+            //if (message.SenderId != userId && 
+            //    !await _dbContext.UserChats
+            //    .AnyAsync(uc => uc.UserId == message.SenderId && 
+            //    uc.ChatId == message.ChatId && 
+            //    uc.Role == UserChatRole.Admin))
+            //{
+            //    return Result.Fail(new Error("Unable to delete message, user is not the sender or chat admin")
+            //        .WithMetadata("Code", ErrorCode.Forbidden));
+            //}
 
             _dbContext.Messages.Remove(message);
             

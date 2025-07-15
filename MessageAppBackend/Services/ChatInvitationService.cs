@@ -160,13 +160,6 @@ namespace MessageAppBackend.Services
             }
             var invitedUser = invitedUserResult.Value;
 
-            var invitedByUserResult = await GetUser(invitedByUserId, $"Invitation sender with id: {invitedByUserId} not found");
-            if (invitedByUserResult.IsFailed)
-            {
-                return invitedByUserResult.ToResult();
-            }
-            var invitedByUser = invitedByUserResult.Value;
-
             var chatInvitation = new ChatInvitation
             {
                 ChatId = sendInvitationDto.ChatId,

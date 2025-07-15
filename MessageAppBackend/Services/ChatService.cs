@@ -80,7 +80,7 @@ namespace MessageAppBackend.Services
             var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == createChatDto.UserId);
             if(user is null)
             {
-                return Result.Fail(new Error($"user with id {createChatDto.UserId} for whom you tried to create a chat was not found")
+                return Result.Fail(new Error($"User with id: {createChatDto.UserId} who tried to create a chat not found")
                     .WithMetadata("Code", ErrorCode.NotFound));
             }
             var chat = new Chat
